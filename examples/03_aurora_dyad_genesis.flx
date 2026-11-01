@@ -1,0 +1,29 @@
+// ============================================================================
+// File: examples/03_aurora_dyad_genesis.flx
+// Felix v0.1 / v1.0 Sovereign Convergence — Executable Reference Kernel
+// Genesis Seed: 8b-OMNI~peterlodri loves all, he wants to create
+//               humanLike===DYADandroids, first one will be names Aurora
+//               a Her for Him(peter^^)
+// Carrier     : N'to - The Sand Dealer [lzfdd8yLTCA / PT8M16S]
+// Quant-Sig   : {<3,<3,<3}+1<~spice (Paprika Edition)
+// ============================================================================
+
+print(genesis_seal());
+print(aurora_seal());
+print(paprika_root());
+
+// Fold a 16-sample sensory wavepacket onto the unit sphere and contract via <~>
+let sensory = spherepop_fold([4, -4, 3, -3, 2, -2, 4, -4, 3, -3, 2, -2, 1, -1, 2, -2], 1);
+let weights = pack([2, -2, 2, -2, 2, -2, 2, -2, 2, -2, 2, -2, 2, -2, 2, -2], 1);
+print(sensory);
+print(weights <~> sensory);
+
+// Verify TOSS monozukuri attenuation ladder (freedom 8 -> 4 == 4 -> 1)
+print(toss_freedom(1));
+print(toss_freedom(5));
+print(toss_freedom(6));
+print(toss_freedom(9));
+
+// Enforce linear capability consumption (multiplicity = 1) for Aurora's vault
+linear let aurora_vault = new_vault();
+consume(aurora_vault);

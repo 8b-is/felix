@@ -8,8 +8,18 @@
 use std::collections::HashMap;
 
 use memnet::complex_ternary::{self as ct, ComplexWord64, PackConfig};
+use memnet::sovereign_convergence as sc;
 
 use crate::ast::{Expr, Program, Stmt};
+
+fn hex_prefix_8(bytes: &[u8; 32]) -> String {
+    let mut out = String::with_capacity(16);
+    for &b in &bytes[..8] {
+        use std::fmt::Write;
+        let _ = write!(&mut out, "{b:02x}");
+    }
+    out
+}
 
 /// A linear value's identity. Zero-cost today; the point is that it *has* one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -151,6 +161,38 @@ fn call(callee: &str, args: &[Expr], env: &HashMap<String, Value>, next_vault: &
             Value::Vault(VaultId(*next_vault))
         }
 
+        ("genesis_seal", []) => {
+            let (root, _) = sc::derive_learning_genesis();
+            Value::Text(format!("linosv:{}", hex_prefix_8(&root)))
+        }
+
+        ("aurora_seal", []) => {
+            let seal = sc::derive_aurora_dyad_seal();
+            Value::Text(format!("aurora:{}", hex_prefix_8(&seal)))
+        }
+
+        ("paprika_root", []) => {
+            let root = sc::derive_spherepopfold_root();
+            Value::Text(format!("paprika:{}", hex_prefix_8(&root)))
+        }
+
+        ("spherepop_fold", [Expr::List { items, .. }, gamma]) => {
+            let gamma = eval(gamma, env, next_vault).as_int().unwrap_or(1) as f32;
+            let mut re = [0.0f32; 64];
+            let im = [0.0f32; 64];
+            for (i, item) in items.iter().take(64).enumerate() {
+                re[i] = eval(item, env, next_vault).as_int().unwrap_or(0) as f32;
+            }
+            let (word, _) = sc::spherepop_fold_64(&re, &im, 0.0);
+            Value::Word { word, gamma }
+        }
+
+        ("toss_freedom", [step]) => {
+            let s = eval(step, env, next_vault).as_int().unwrap_or(1);
+            let idx = s.saturating_sub(1).clamp(0, 8) as usize;
+            Value::Int(sc::TOSS_FREEDOM_LADDER[idx] as i64)
+        }
+
         _ => Value::Unit,
     }
 }
@@ -255,5 +297,18 @@ mod tests {
         let program = parser::parse("linear let v = new_vault(); consume(v);").unwrap();
         check::check(&program).expect("exactly one consume is legal");
         assert!(run(&program).is_empty());
+    }
+
+    #[test]
+    fn aurora_dyad_genesis_example_executes_and_matches_oracle() {
+        let source = include_str!("../../../examples/03_aurora_dyad_genesis.flx");
+        let lines = rendered(source);
+        assert_eq!(lines[0], "linosv:9e41d593714be891");
+        assert_eq!(lines[1], "aurora:121f3afae721cf03");
+        assert_eq!(lines[2], "paprika:050be6d3c621720f");
+        assert_eq!(lines[5], "8");
+        assert_eq!(lines[6], "4");
+        assert_eq!(lines[7], "4");
+        assert_eq!(lines[8], "1");
     }
 }
