@@ -1,0 +1,19 @@
+// Felix v0.1 — the two things this language actually promises.
+//
+// 1. pack() and <~> are the memnet reference oracle, not a reimplementation.
+// 2. A linear value is used exactly once, or it does not compile.
+
+let a = pack([3, -3, 0, 0], 2);
+let b = pack([1, 1, 1, 1], 1);
+
+print(a);
+print(b);
+print(a <~> b);
+
+// The NAND-only cascade, reached from source.
+print(fib(12));
+print(bt(144));
+
+// Linear values: exactly one consume, enforced at check time.
+linear let vault = new_vault();
+consume(vault);

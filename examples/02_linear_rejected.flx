@@ -1,0 +1,4 @@
+// This file is meant to FAIL the checker. It is here so the error message is
+// part of the repository, not a story about one.
+linear let vault = new_vault();
+print(vault);

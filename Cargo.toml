@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["crates/felix-lang", "crates/felix-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[workspace.dependencies]
+felix-lang = { path = "crates/felix-lang" }
+memnet = { path = "../memnet" }
