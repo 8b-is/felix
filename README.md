@@ -88,4 +88,16 @@ The differential tests (`packing_is_bit_identical_to_the_oracle`,
 `contraction_is_bit_identical_to_the_oracle`) link the real `memnet` crate by
 path, so if either side drifts the build breaks instead of the claim.
 
+## Where it lives
+
+| Forge | URL | State |
+|---|---|---|
+| GitHub | https://github.com/8b-is/felix | live |
+| Codeberg | https://codeberg.org/lodripeter-sec/felix | **does not exist yet** — create it, then run the mirror script |
+| g8t (Forgejo) | `git@g8t.8b.is:8b-is/felix.git` | **no remote yet** |
+
+`scripts/mirror.sh` checks all three forges for reachability *before* pushing,
+because a mirror that half-runs leaves the forges disagreeing; it prints the
+create commands when one is missing.
+
 AGPL-3.0-only, matching the workspace it lives in.
