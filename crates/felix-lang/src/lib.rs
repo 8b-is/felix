@@ -23,10 +23,12 @@
 
 pub mod ast;
 pub mod check;
+pub mod codegen_v2;
 pub mod diag;
 pub mod eval;
 pub mod lexer;
 pub mod parser;
+pub mod typeck;
 
 pub use ast::{Expr, Program, Stmt};
 pub use diag::{Diagnostic, Span};
