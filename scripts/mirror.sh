@@ -57,7 +57,7 @@ Create the missing remotes first, then re-run this script:
              curl -X POST https://codeberg.org/api/v1/user/repos \
                -H "Authorization: token $CODEBERG_TOKEN" \
                -H 'Content-Type: application/json' \
-               -d '{"name":"felix","private":false,"description":"Felix v0.1 — linear values, ternary words"}'
+               -d '{"name":"felix","private":false,"description":"Felix v1.0 — linear values, exact p/q scales, ternary words"}'
 
   g8t        Forgejo at g8t.8b.is — create `8b-is/felix` there, then ensure the
              host alias in ~/.ssh/config resolves for this machine.

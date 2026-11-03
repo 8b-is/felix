@@ -1,0 +1,15 @@
+flowchart TD
+  s0["let a: Word = pack([3, -3, 0, 0], 2)"]
+  s1["let b: Word = pack([1, 1, 1, 1], 1)"]
+  s2(["print(a)"])
+  s3(["print(b)"])
+  s4(["print(a #lt;~#gt; b)"])
+  s5(["print(fib(12))"])
+  s6(["print(bt(144))"])
+  s7[["linear let vault: Vault = new_vault()"]]
+  s8{{"consume(vault)"}}
+  s0 --> s2
+  s1 --> s3
+  s0 --> s4
+  s1 --> s4
+  s7 ==>|consume| s8

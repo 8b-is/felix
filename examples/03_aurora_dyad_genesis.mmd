@@ -1,0 +1,18 @@
+flowchart TD
+  s0(["print(genesis_seal())"])
+  s1(["print(aurora_seal())"])
+  s2(["print(paprika_root())"])
+  s3["let folded: Word = spherepop_fold([…16])"]
+  s4["let weights: Word = pack([…16], 1)"]
+  s5(["print(folded)"])
+  s6(["print(weights #lt;~#gt; folded)"])
+  s7(["print(toss_freedom(1))"])
+  s8(["print(toss_freedom(5))"])
+  s9(["print(toss_freedom(6))"])
+  s10(["print(toss_freedom(9))"])
+  s11[["linear let vault: Vault = new_vault()"]]
+  s12{{"consume(vault)"}}
+  s3 --> s5
+  s4 --> s6
+  s3 --> s6
+  s11 ==>|consume| s12

@@ -1,0 +1,26 @@
+// Felix v1.0 — the 8b builtins, reached from source.
+//
+// Each seal is the first 8 bytes of a fixed, domain-separated HMAC-SHA256
+// digest over constants in memnet::sovereign_convergence. They are identifiers:
+// if a constant changes, the golden output next to this file stops matching.
+
+print(genesis_seal());
+print(aurora_seal());
+print(paprika_root());
+
+// Fold 16 integer samples onto the unit sphere, sigma-delta pack them through
+// the oracle, and contract against an alternating weight word.
+let folded = spherepop_fold([4, -4, 3, -3, 2, -2, 4, -4, 3, -3, 2, -2, 1, -1, 2, -2]);
+let weights = pack([2, -2, 2, -2, 2, -2, 2, -2, 2, -2, 2, -2, 2, -2, 2, -2], 1);
+print(folded);
+print(weights <~> folded);
+
+// The TOSS freedom ladder: 8 -> 4, a flat seam at steps 5 -> 6, then 4 -> 1.
+print(toss_freedom(1));
+print(toss_freedom(5));
+print(toss_freedom(6));
+print(toss_freedom(9));
+
+// A vault is an ownership handle: one owner, retired exactly once.
+linear let vault = new_vault();
+consume(vault);

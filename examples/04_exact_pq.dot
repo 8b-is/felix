@@ -1,0 +1,25 @@
+digraph felix {
+  node [fontname="monospace"];
+  s0 [shape=box, label="let third: Word = pack([1, 1, 1, -1], 1/3)"];
+  s1 [shape=box, label="let wide: Word = pack([5, 5, 5, 5], 3/7)"];
+  s2 [shape=box, label="let p: Pair = third <~> wide"];
+  s3 [shape=note, label="print(third)"];
+  s4 [shape=note, label="print(wide)"];
+  s5 [shape=note, label="print(p)"];
+  s6 [shape=note, label="print(re(p))"];
+  s7 [shape=note, label="print(im(p))"];
+  s8 [shape=note, label="print(3/2)"];
+  s9 [shape=note, label="print(-2)"];
+  s10 [shape=box, label="let a: Word = pack([1, 1, 1, -1], 1)"];
+  s11 [shape=box, label="let b: Word = pack([5, 5, 5, 5], 1)"];
+  s12 [shape=note, label="print(re(a <~> b))"];
+  s0 -> s2;
+  s1 -> s2;
+  s0 -> s3;
+  s1 -> s4;
+  s2 -> s5;
+  s2 -> s6;
+  s2 -> s7;
+  s10 -> s12;
+  s11 -> s12;
+}

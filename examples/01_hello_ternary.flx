@@ -1,4 +1,4 @@
-// Felix v0.1 — the two things this language actually promises.
+// Felix — the first two promises, the ones v0.1 shipped with.
 //
 // 1. pack() and <~> are the memnet reference oracle, not a reimplementation.
 // 2. A linear value is used exactly once, or it does not compile.

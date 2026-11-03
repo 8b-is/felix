@@ -1,0 +1,17 @@
+digraph felix {
+  node [fontname="monospace"];
+  s0 [shape=box, label="let a: Word = pack([3, -3, 0, 0], 2)"];
+  s1 [shape=box, label="let b: Word = pack([1, 1, 1, 1], 1)"];
+  s2 [shape=note, label="print(a)"];
+  s3 [shape=note, label="print(b)"];
+  s4 [shape=note, label="print(a <~> b)"];
+  s5 [shape=note, label="print(fib(12))"];
+  s6 [shape=note, label="print(bt(144))"];
+  s7 [shape=box, peripheries=2, label="linear let vault: Vault = new_vault()"];
+  s8 [shape=octagon, label="consume(vault)"];
+  s0 -> s2;
+  s1 -> s3;
+  s0 -> s4;
+  s1 -> s4;
+  s7 -> s8 [style=bold, label="consume"];
+}

@@ -1,0 +1,33 @@
+felix-capsule/1
+id: d73d2fba2acb1452bf30f55324b8c82d
+source-sha256: 5af06e12d818d4dccd6f80f8f46d5c39cb2e71c4a346f0b8428c7b079f7ad65e
+output-sha256: 04d6b3c83c63015431197d38d745f42094776a8014025a25cca257aa8d2bc84d
+source-bytes: 506
+output-bytes: 82
+--- source
+// Felix — the first two promises, the ones v0.1 shipped with.
+//
+// 1. pack() and <~> are the memnet reference oracle, not a reimplementation.
+// 2. A linear value is used exactly once, or it does not compile.
+
+let a = pack([3, -3, 0, 0], 2);
+let b = pack([1, 1, 1, 1], 1);
+
+print(a);
+print(b);
+print(a <~> b);
+
+// The NAND-only cascade, reached from source.
+print(fib(12));
+print(bt(144));
+
+// Linear values: exactly one consume, enforced at check time.
+linear let vault = new_vault();
+consume(vault);
+
+--- output
+word{gamma:2, re:+1/1, im:+0/0}
+word{gamma:1, re:+4/0, im:+0/0}
+(0, 0)
+144
+00+--+

@@ -1,0 +1,41 @@
+felix-capsule/1
+id: b9a8f24d9ec85ae07e387cc7b4f222fa
+source-sha256: d957a685f8ff6ec82d2b8f0a87aa7d8fd94f4958cd8d9136c42c925f95704773
+output-sha256: 6ebcebf23db9dd426edc704ac022a3204647ebc4d5cfebd7d97c25cd519c716a
+source-bytes: 779
+output-bytes: 90
+--- source
+// Felix v1.0 — exact p/q, end to end.
+//
+// A scale written as a ratio stays a ratio: it is packed with the word, it
+// multiplies through the contraction, and re()/im() return it unrounded.
+
+let third = pack([1, 1, 1, -1], 1/3);     // dead zone 1/6: every sample clears it
+let wide  = pack([5, 5, 5, 5], 3/7);      // dead zone 3/14
+let p = third <~> wide;
+
+print(third);
+print(wide);
+print(p);          // the integer accumulator, unscaled
+print(re(p));      // 2 · 1/3 · 3/7, exactly
+print(im(p));
+
+// Ratios reduce at scan time.
+print(6/4);
+print(-10/5);
+
+// The same samples at scale 1, for contrast: the accumulator is unchanged and
+// so is the value, because nothing multiplies it.
+let a = pack([1, 1, 1, -1], 1);
+let b = pack([5, 5, 5, 5], 1);
+print(re(a <~> b));
+
+--- output
+word{gamma:1/3, re:+3/1, im:+0/0}
+word{gamma:3/7, re:+4/0, im:+0/0}
+(2, 0)
+2/7
+0
+3/2
+-2
+2

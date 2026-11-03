@@ -8,12 +8,14 @@
 //!             | "consume" "(" expr ")" ";"
 //!             | "print"   "(" expr ")" ";"
 //! expr       := primary ( "<~>" primary )*
-//! primary    := INT | IDENT | "[" [ expr ("," expr)* ] "]"
+//! primary    := INT | RATIO | IDENT | "[" [ expr ("," expr)* ] "]"
 //!             | IDENT "(" [ expr ("," expr)* ] ")"
+//! RATIO      := INT "/" DIGITS          (no spaces; reduced; q > 0)
 //! ```
 //!
 //! Note what is *not* here: assignment, mutation, loops, functions, modules.
 //! A grammar that fits on a postcard is one a second implementation can match.
+//! Types are not in the grammar either; `check.rs` infers every one of them.
 
 use crate::ast::{Expr, Program, Stmt};
 use crate::diag::{Diagnostic, Span};
@@ -158,7 +160,14 @@ impl Parser {
     fn primary(&mut self) -> Result<Expr, Diagnostic> {
         let token = self.bump();
         match token.token {
-            Token::Int(value) => Ok(Expr::Int(value)),
+            Token::Int(value) => Ok(Expr::Int {
+                value,
+                span: token.span,
+            }),
+            Token::Ratio(value) => Ok(Expr::Ratio {
+                value,
+                span: token.span,
+            }),
             Token::LBracket => {
                 let mut items = Vec::new();
                 if self.peek().token != Token::RBracket {
@@ -283,5 +292,20 @@ mod tests {
     #[test]
     fn empty_input_is_a_valid_empty_program() {
         assert!(parse("").unwrap().statements.is_empty());
+    }
+
+    #[test]
+    fn ratio_literals_parse_with_their_span() {
+        let program = parse("let g = 2/6;").unwrap();
+        match &program.statements[0] {
+            Stmt::Let {
+                value: Expr::Ratio { value, span },
+                ..
+            } => {
+                assert_eq!(value.to_string(), "1/3");
+                assert_eq!(span.column, 9);
+            }
+            other => panic!("expected a ratio let, got {other:?}"),
+        }
     }
 }

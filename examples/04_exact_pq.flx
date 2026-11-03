@@ -1,0 +1,24 @@
+// Felix v1.0 — exact p/q, end to end.
+//
+// A scale written as a ratio stays a ratio: it is packed with the word, it
+// multiplies through the contraction, and re()/im() return it unrounded.
+
+let third = pack([1, 1, 1, -1], 1/3);     // dead zone 1/6: every sample clears it
+let wide  = pack([5, 5, 5, 5], 3/7);      // dead zone 3/14
+let p = third <~> wide;
+
+print(third);
+print(wide);
+print(p);          // the integer accumulator, unscaled
+print(re(p));      // 2 · 1/3 · 3/7, exactly
+print(im(p));
+
+// Ratios reduce at scan time.
+print(6/4);
+print(-10/5);
+
+// The same samples at scale 1, for contrast: the accumulator is unchanged and
+// so is the value, because nothing multiplies it.
+let a = pack([1, 1, 1, -1], 1);
+let b = pack([5, 5, 5, 5], 1);
+print(re(a <~> b));

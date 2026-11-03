@@ -1,0 +1,6 @@
+// This file is meant to FAIL the checker, three times in one pass: v0.1 would
+// have printed `()` for each of these lines instead.
+let w = pack([1, -1], 1);
+print(w <~> 3);
+print(pakc([1], 1));
+print(ghost);

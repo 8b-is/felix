@@ -1,6 +1,6 @@
 [package]
 name = "felix-lang"
-description = "Felix v0.1 — linear values, ternary words, and a contraction that must agree with the memnet oracle"
+description = "Felix v1.0 — linear values, exact p/q scales, typed builtins, and a ternary datapath that must agree with the memnet oracle"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

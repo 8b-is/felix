@@ -61,8 +61,9 @@ impl Diagnostic {
 
     pub fn render(&self, source: &str) -> String {
         let mut out = format!("error at {}: {}", self.span.site(), self.message);
-        for (line_no, text) in source.lines().enumerate() {
-            if line_no + 1 == self.span.line {
+        for (index, text) in source.lines().enumerate() {
+            let line_no = index + 1;
+            if line_no == self.span.line {
                 out.push_str(&format!("\n  {line_no:>4} | {text}"));
                 out.push_str(&format!(
                     "\n       | {}^",
@@ -84,3 +85,16 @@ impl fmt::Display for Diagnostic {
 }
 
 impl std::error::Error for Diagnostic {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_gutter_shows_the_one_based_line_number() {
+        let source = "let a = 1;\nprint(b);\n";
+        let rendered = Diagnostic::error(Span::new(17, 18, 2, 7), "nope").render(source);
+        assert!(rendered.contains("     2 | print(b);"), "{rendered}");
+        assert!(rendered.contains("       |       ^"), "{rendered}");
+    }
+}

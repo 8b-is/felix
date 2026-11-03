@@ -1,6 +1,6 @@
 [package]
 name = "felix-cli"
-description = "`felix` — run .flx programs"
+description = "`felix` — run, check, graph, seal and verify .flx programs"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
