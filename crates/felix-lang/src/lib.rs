@@ -31,12 +31,14 @@
 pub mod ast;
 pub mod capsule;
 pub mod check;
+pub mod codegen_v2;
 pub mod diag;
 pub mod eval;
 pub mod graph;
 pub mod lexer;
 pub mod parser;
 pub mod ratio;
+pub mod typeck;
 
 pub use ast::{Expr, Program, Stmt};
 pub use check::{Checked, Type};

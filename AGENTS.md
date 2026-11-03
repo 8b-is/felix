@@ -7,8 +7,8 @@ reference oracle, and a path dependency makes drift a build failure.
 
 ```bash
 cd ~/workspace/peterlodri-sec/felix
-scripts/oneshot.sh        # fmt · clippy · 84 tests · examples · capsules · oracle
-cargo test                # 74 unit + 10 E2E, offline
+scripts/oneshot.sh        # fmt · clippy · 87 tests · examples · capsules · oracle
+cargo test                # 77 unit + 10 E2E, offline
 cargo clippy --all-targets -- -D warnings
 cargo fmt -p felix-lang -p felix-cli   # never --all: it rewrites ../memnet too
 cargo run -q -- examples/04_exact_pq.flx

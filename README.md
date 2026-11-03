@@ -178,13 +178,14 @@ drives the real binary against all of them.
 
 | Piece | State |
 |---|---|
-| Lexer, parser, type checker, evaluator | working, 84 tests (74 unit, 10 E2E) |
+| Lexer, parser, type checker, evaluator | working, 87 tests on `main` (77 unit, 10 E2E); 84 at the `v1.0.0` tag |
 | Linear-capability rule | enforced, with both use sites in the diagnostic |
 | Static types for every builtin | enforced; the builtin table is walked by a test |
 | Exact `p/q` scales | literal → word → contraction → `re`/`im`, unrounded |
 | Ternary packing, folding, contraction | delegated to `memnet`, differentially tested |
 | `graph` (DOT + Mermaid), `capsule`, `verify`, `-e` | working, golden-tested end to end |
 | 8b builtins (`*_seal`, `toss_freedom`, `spherepop_fold`) | working, pinned by golden values; need memnet's `sovereign_convergence` committed |
+| `typeck.rs` (`LinearTypeEnv`), `codegen_v2.rs` (AGP-ISA words) | merged from upstream after `v1.0.0`; unit-tested, but **not reachable from `.flx` source**. The language's linear rule is still `check.rs`, and `codegen_v2` emits one fixed 7-word program |
 | VM, LSP, MCP, stdlib modules | **absent, deliberately** |
 | `mem8` / `engram` / `entheai` stdlib | absent: each needs its own acceptance tests |
 | Second implementation (Zig/RTL) | absent: `capsules/` is the conformance suite it will be diffed against |
@@ -198,6 +199,7 @@ documentation bug and should be deleted.
 
 ```
 crates/felix-lang   lexer · ast · parser · check (types + linear) · eval · ratio · graph · capsule · diag
+                    (+ typeck, codegen_v2: standalone, not wired to source)
 crates/felix-cli    the `felix` binary, and tests/e2e.rs
 examples/           NN_name.flx + .out | .err, and .dot/.mmd for passing ones
 capsules/           sealed program + transcript for every passing example
