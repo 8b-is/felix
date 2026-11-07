@@ -1,0 +1,26 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install GNAT and all tools
+RUN apt-get update && apt-get install -y \
+    gnat-14 \
+    gprbuild \
+    gnatbind \
+    gnatlink \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/lib/gnat-14/bin:${PATH}"
+
+WORKDIR /src
+
+COPY . .
+
+# Build
+RUN gprbuild -P felix.gpr -j0
+
+# Run tests
+RUN ./test_harness.sh ./obj/felix_nand_tcb
+
+# Run benchmarks
+RUN ./run_benchmarks 100000 10000

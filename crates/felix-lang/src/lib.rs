@@ -28,6 +28,7 @@
 //! claim that a language runtime is a mind. Those are separate slices with their
 //! own acceptance tests.
 
+pub mod agp_isa_packetizer;
 pub mod ast;
 pub mod capsule;
 pub mod check;
@@ -36,7 +37,11 @@ pub mod diag;
 pub mod eval;
 pub mod felix_codegen_jit;
 pub mod felix_phoenix;
+pub mod fpga_axis_ternary;
+pub mod galaxia_m8_federation;
 pub mod graph;
+pub mod ljodatal_18_charms;
+pub mod m8_genesis_container;
 
 pub mod lexer;
 pub mod omni_subsystems;

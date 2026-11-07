@@ -1,0 +1,50 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build dependencies and GNAT from source
+RUN apt-get update && apt-get install -y \
+    wget \
+    build-essential \
+    gnat \
+    gprbuild \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install gnatprove, gnatpp, gnatcheck, gnatdoc from source
+RUN wget -q https://github.com/AdaCore/gnatprove/archive/refs/tags/24.0w-20241101.tar.gz && \
+    tar xzf 24.0w-20241101.tar.gz && \
+    cd gnatprove-24.0w-20241101 && \
+    make prefix=/usr/local install && \
+    cd .. && rm -rf gnatprove-24.0w-20241101*
+
+RUN wget -q https://github.com/AdaCore/gnatpp/archive/refs/tags/24.0w-20241101.tar.gz && \
+    tar xzf 24.0w-20241101.tar.gz && \
+    cd gnatpp-24.0w-20241101 && \
+    make prefix=/usr/local install && \
+    cd .. && rm -rf gnatpp-24.0w-20241101*
+
+RUN wget -q https://github.com/AdaCore/gnatcheck/archive/refs/tags/24.0w-20241101.tar.gz && \
+    tar xzf 24.0w-20241101.tar.gz && \
+    cd gnatcheck-24.0w-20241101 && \
+    make prefix=/usr/local install && \
+    cd .. && rm -rf gnatcheck-24.0w-20241101*
+
+RUN wget -q https://github.com/AdaCore/gnatdoc/archive/refs/tags/24.0w-20241101.tar.gz && \
+    tar xzf 24.0w-20241101.tar.gz && \
+    cd gnatdoc-24.0w-20241101 && \
+    make prefix=/usr/local install && \
+    cd .. && rm -rf gnatdoc-24.0w-20241101*
+
+WORKDIR /src
+
+COPY . .
+
+# Build and prove
+RUN gprbuild -P felix.gpr -j0 && \
+    gnatprove -P felix.gpr --level=2 --replay --report=all --counterexample --steps=10000
+
+# Run tests
+RUN ./test_harness.sh ./obj/felix_nand_tcb
+
+# Run benchmarks
+RUN ./run_benchmarks 100000 10000

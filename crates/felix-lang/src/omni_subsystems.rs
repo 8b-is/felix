@@ -341,6 +341,8 @@ pub mod ernie55_backbone {
 }
 
 pub mod ultra_zeno {
+    pub const WAVE_HARMONIC_MODES: usize = 8;
+
     #[derive(Clone, Debug)]
     pub struct WaveContinuityLedger<const N: usize> {
         pub active_slots: usize,

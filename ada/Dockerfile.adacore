@@ -1,0 +1,38 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install GNAT from AdaCore
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg2 \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add AdaCore PPA for GNAT Pro
+RUN wget -qO - https://packages.adacore.com/apt/gcc-14.asc | gpg --dearmor -o /usr/share/keyrings/adacore.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/adacore.gpg] https://packages.adacore.com/apt/ubuntu noble main" > /etc/apt/sources.list.d/adacore.list && \
+    apt-get update && apt-get install -y \
+    gnat-14 \
+    gprbuild \
+    gnatprove \
+    gnatpp \
+    gnatcheck \
+    gnatdoc \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/lib/gnat-14/bin:${PATH}"
+
+WORKDIR /src
+
+COPY . .
+
+# Build and prove
+RUN gprbuild -P felix.gpr -j0 && \
+    gnatprove -P felix.gpr --level=2 --replay --report=all --counterexample --steps=10000
+
+# Run tests
+RUN ./test_harness.sh ./obj/felix_nand_tcb
+
+# Run benchmarks
+RUN ./run_benchmarks 100000 10000

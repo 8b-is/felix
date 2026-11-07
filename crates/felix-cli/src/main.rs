@@ -20,6 +20,7 @@ usage:
   felix capsule <file.flx | ->        seal the program and its transcript
   felix verify <capsule | ->          re-run a capsule; fail unless it reproduces
   felix phoenix                       run FELIX|PHOENIX Tier-1/Tier-2 PCC + liveSymbioticVM + MEM8 Pass-2 probe
+  felix omni                          run Ternary Omni Information Theory (Omega_3) + W^X JIT + Galaxia CRDT + 64x64 FPGA probe
   felix --version | --help";
 
 enum Fail {
@@ -65,6 +66,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["capsule", path] => cmd_capsule(&read(path)?),
         ["verify", path] => cmd_verify(&read(path)?),
         ["phoenix"] | ["--phoenix"] => cmd_phoenix(),
+        ["omni"] | ["--omni"] => cmd_omni(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -76,7 +78,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
 }
 
 fn is_command(word: &str) -> bool {
-    matches!(word, "run" | "check" | "graph" | "capsule" | "verify" | "phoenix")
+    matches!(word, "run" | "check" | "graph" | "capsule" | "verify" | "phoenix" | "omni")
 }
 
 fn read(path: &str) -> Result<String, Fail> {
@@ -220,5 +222,71 @@ fn cmd_phoenix() -> Result<(), Fail> {
             break;
         }
     }
+    Ok(())
+}
+
+fn cmd_omni() -> Result<(), Fail> {
+    use felix_lang::{
+        felix_codegen_jit::{JitExecutablePage, JitRuntimeBridge},
+        felix_phoenix::{QuantTernPQTensor, CAP_ARENA, CAP_IO},
+        m8_genesis_container::{M8PersonaContainer, OMNI_GENESIS_SEED_PHRASE},
+        omni_ternary_info::evaluate_omni_ternary_theory_of_all,
+    };
+    let report = evaluate_omni_ternary_theory_of_all().map_err(Fail::Usage)?;
+    let jit_page = JitExecutablePage::compile_host_native_trampoline(CAP_IO | CAP_ARENA)
+        .map_err(Fail::Usage)?;
+    let acts = [10i16, -20, 30, 40, -50, 60, 70, -80, 90, 100];
+    let qtensor = QuantTernPQTensor::pack(
+        &[1, -1, 0, 1, 0, -1, 1, -1, 0, 1],
+        &[0.5, 1.0, 2.0, 0.5],
+    );
+    let mut bridge = JitRuntimeBridge {
+        hotswap_pending: 0,
+        granted_caps: CAP_IO | CAP_ARENA,
+        tgemm_result_slot: 0,
+        exit_status: -1,
+    };
+    let jit_ret = jit_page.execute_native(&mut bridge, &acts, &qtensor);
+    let genesis_m8 = M8PersonaContainer::generate_from_seed_phrase(OMNI_GENESIS_SEED_PHRASE)
+        .map_err(Fail::Usage)?;
+
+    println!("☀️ TERNARY OMNI INFORMATION THEORY OF ALL (Ω₃) — Unified Synthesis Report");
+    println!(
+        "  • Radix Economy (b = 3) : optimal_base={} (3/ln3={:.4} < 2/ln2={:.4}, SPQT={:.2}% byte efficiency, quantTernP/Q={:.2}x)",
+        report.radix_economy_certificate.optimal_integer_base,
+        report.radix_economy_certificate.base_3_specific_cost,
+        report.radix_economy_certificate.base_2_specific_cost,
+        report.radix_economy_certificate.spqt_base243_byte_efficiency_pct,
+        report.radix_economy_certificate.quant_tern_pq_55bit_compression_vs_fp16
+    );
+    println!(
+        "  • Isentropic Whitening  : H₃(unbent)={:.4} -> H₃(bent)={:.6} trits (ΔE_Landauer={:.1} J, disagreed={})",
+        report.isentropic_whitening_proof.unbent_entropy_trits,
+        report.isentropic_whitening_proof.bent_marginal_entropy_trits,
+        report.isentropic_whitening_proof.landauer_erasure_trits,
+        report.isentropic_whitening_proof.roundtrip_disagreed_trits
+    );
+    println!(
+        "  • Space Axis (FELIX-JIT): x86_64_evex={:#018x}, aarch64_neon={:#018x}, live_wx_jit={} (status={})",
+        report.space_axis_felix_x86_digest,
+        report.space_axis_felix_arm64_digest,
+        jit_ret,
+        bridge.exit_status
+    );
+    println!(
+        "  • Time Axis & Cybernetic: ρ_Jury={:.2} (cap={:.4} trits), DAG C_dyn={} / C_seq={}, L_Ω₃={:.6}",
+        report.time_axis_jury_spectral_radius,
+        report.time_axis_cybernetic_capacity_trits,
+        report.time_axis_dag_critical_path_units,
+        report.time_axis_dag_sequential_units,
+        report.omni_lagrangian_total
+    );
+    println!(
+        "  • Genesis .m8 Container : runic='{}' ({}) pcc_seal={:#018x} (all_verified={} ✓)",
+        genesis_m8.futhark_runic_inscription,
+        genesis_m8.futhark_latin_translit,
+        genesis_m8.container_pcc_seal_u64,
+        report.all_invariants_verified
+    );
     Ok(())
 }
