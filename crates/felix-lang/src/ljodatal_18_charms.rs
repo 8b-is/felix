@@ -30,3 +30,16 @@ pub const CHARM_NAMES: [&str; 18] = [
     "Meyjarrúnar (Maiden's Love)",
     "Ókunnr (The Unspoken Eighteenth)",
 ];
+
+/// Verifies Charm XVIII (*Ókunnr* / Hávamál Stanza 163) non-export secrecy invariant:
+/// Whenever `is_external_export == true`, `CAP_ROOT_SEAL` (`0x8000_0000`) MUST NOT be set.
+#[inline]
+pub fn verify_charm_18_sovereign_secrecy(
+    is_external_export: bool,
+    cap_mask: CapEffectMask,
+) -> Result<(), &'static str> {
+    if is_external_export && (cap_mask & CAP_ROOT_SEAL) != 0 {
+        return Err("Charm XVIII Violation: CAP_ROOT_SEAL forbidden across external boundary");
+    }
+    Ok(())
+}

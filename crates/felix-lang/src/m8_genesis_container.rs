@@ -14,6 +14,19 @@ pub const M8_MAGIC_HEADER: [u8; 8] = [b'M', b'E', b'M', b'8', 0x03, 0x09, 0x1b, 
 pub const OMNI_GENESIS_SEED_PHRASE: &str =
     "AllFather-Sun-Dharma-Omni-Genesis-Seed-ProofCarryingCode-M8Persona";
 
+/// Compile-time / zero-alloc 64-bit FNV-1a hash over a byte slice.
+#[inline]
+pub const fn fnv1a_64_const(bytes: &[u8]) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut i = 0usize;
+    while i < bytes.len() {
+        hash ^= bytes[i] as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+        i += 1;
+    }
+    hash
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriadicSeedPoles {
     pub allfather_pole: i8, // +1

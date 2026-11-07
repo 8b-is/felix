@@ -28,12 +28,15 @@
 //! claim that a language runtime is a mind. Those are separate slices with their
 //! own acceptance tests.
 
+pub mod agp_cap_iommu_tlb;
+pub mod agp_dma_ring_sim;
 pub mod agp_isa_packetizer;
 pub mod ast;
 pub mod capsule;
 pub mod check;
 pub mod codegen_v2;
 pub mod diag;
+pub mod esp32s3_espnow_mesh;
 pub mod eval;
 pub mod felix_codegen_jit;
 pub mod felix_phoenix;
@@ -41,15 +44,20 @@ pub mod fpga_axis_ternary;
 pub mod galaxia_m8_federation;
 pub mod graph;
 pub mod ljodatal_18_charms;
+pub mod m8_axum_webhook_server;
 pub mod m8_genesis_container;
+pub mod mind_all_neuro_omega;
 
 pub mod lexer;
 pub mod omni_subsystems;
 pub mod omni_ternary_info;
 pub mod parser;
 pub mod phoenix;
+pub mod phoenix_cap_abi;
 pub mod ratio;
 pub mod typeck;
+pub mod well_signal_resolution;
+pub mod well_signal_spqt_espnow;
 
 pub use omni_subsystems::{
     ada_bridge, dag_scheduler, ernie55_backbone, futhark_cipher_simd, latent_moe_simd, model_cache,

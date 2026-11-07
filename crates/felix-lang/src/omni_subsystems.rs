@@ -343,6 +343,40 @@ pub mod ernie55_backbone {
 pub mod ultra_zeno {
     pub const WAVE_HARMONIC_MODES: usize = 8;
 
+    /// Exact dyadic rational `k / 2^shift` for zero-drift wave harmonic ledger coordinates.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    pub struct DyadicQ {
+        pub num: i64,
+        pub shift: u8,
+    }
+
+    impl DyadicQ {
+        pub const ZERO: Self = Self { num: 0, shift: 16 };
+
+        #[inline]
+        pub fn from_f64(val: f64, shift: u8) -> Self {
+            let scale = (1u64 << (shift.min(30) as u32)) as f64;
+            Self {
+                num: (val * scale).round() as i64,
+                shift,
+            }
+        }
+    }
+
+    /// Dyadic complex harmonic amplitude `re + i * im`.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    pub struct DyadicComplex {
+        pub re: DyadicQ,
+        pub im: DyadicQ,
+    }
+
+    impl DyadicComplex {
+        pub const ZERO: Self = Self {
+            re: DyadicQ::ZERO,
+            im: DyadicQ::ZERO,
+        };
+    }
+
     #[derive(Clone, Debug)]
     pub struct WaveContinuityLedger<const N: usize> {
         pub active_slots: usize,
@@ -351,6 +385,19 @@ pub mod ultra_zeno {
     impl<const N: usize> WaveContinuityLedger<N> {
         pub const fn new() -> Self {
             Self { active_slots: N }
+        }
+
+        pub fn superpose_slot(
+            &self,
+            slot_idx: usize,
+            modes: &[DyadicComplex; WAVE_HARMONIC_MODES],
+            _wuldor_twigs: u8,
+            _bend_k: u8,
+        ) -> Result<DyadicComplex, String> {
+            if slot_idx >= N {
+                return Err(format!("WaveContinuityLedger slot {slot_idx} >= {N}"));
+            }
+            Ok(modes[0])
         }
     }
 }

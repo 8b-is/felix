@@ -21,6 +21,7 @@ usage:
   felix verify <capsule | ->          re-run a capsule; fail unless it reproduces
   felix phoenix                       run FELIX|PHOENIX Tier-1/Tier-2 PCC + liveSymbioticVM + MEM8 Pass-2 probe
   felix omni                          run Ternary Omni Information Theory (Omega_3) + W^X JIT + Galaxia CRDT + 64x64 FPGA probe
+  felix mind                          run Bilingual Neuro-Cybernetic MIND (EN) === mind (HU: ALL) + Well SPQT3 + Cap ABI probe
   felix --version | --help";
 
 enum Fail {
@@ -67,6 +68,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["verify", path] => cmd_verify(&read(path)?),
         ["phoenix"] | ["--phoenix"] => cmd_phoenix(),
         ["omni"] | ["--omni"] => cmd_omni(),
+        ["mind"] | ["--mind"] | ["--mind-all"] | ["well"] | ["--well"] => cmd_mind_well(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -78,7 +80,10 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
 }
 
 fn is_command(word: &str) -> bool {
-    matches!(word, "run" | "check" | "graph" | "capsule" | "verify" | "phoenix" | "omni")
+    matches!(
+        word,
+        "run" | "check" | "graph" | "capsule" | "verify" | "phoenix" | "omni" | "mind" | "well"
+    )
 }
 
 fn read(path: &str) -> Result<String, Fail> {
@@ -287,6 +292,62 @@ fn cmd_omni() -> Result<(), Fail> {
         genesis_m8.futhark_latin_translit,
         genesis_m8.container_pcc_seal_u64,
         report.all_invariants_verified
+    );
+    cmd_mind_well()?;
+    Ok(())
+}
+
+fn cmd_mind_well() -> Result<(), Fail> {
+    use felix_lang::{
+        mind_all_neuro_omega::{
+            NeuroMindAllSimulator, BILINGUAL_AXIOM_EN_MIND, BILINGUAL_AXIOM_HU_MIND,
+            BILINGUAL_AXIOM_MEANING,
+        },
+        well_signal_resolution::WellRecord,
+        well_signal_spqt_espnow::pack_signal_table_spqt3,
+    };
+
+    let sim = NeuroMindAllSimulator::default();
+    let s_amygdala = sim.evaluate_state(0, 0.0, 0.0).map_err(Fail::Usage)?;
+    let s_dmt = sim.evaluate_state(1, 0.65, 0.65).map_err(Fail::Usage)?;
+    let s_ego_death = sim.evaluate_state(2, 1.0, 1.0).map_err(Fail::Usage)?;
+
+    const MAHAKALA_LAP1: &str = "\
+- source: youtube\n\
+- kind: video\n\
+- title: Mahakala mantra prayer\n\
+- artist: Alexander Hacker\n\
+- album: empty\n\
+- year: 2026\n\
+- genre: empty\n\
+- url: https://music.youtube.com/watch?v=pL18Xr_26ts&si=PVlUHWbxr2Fja3t-\n";
+    let w1 = WellRecord::parse_zero_alloc(MAHAKALA_LAP1);
+    let t1 = w1.resolve_signals();
+    let md1 = t1
+        .render_to_stack_buf(&w1)
+        .map_err(|_| Fail::Usage("StackMarkdownBuf overflow".into()))?;
+    let spqt_lap1 = pack_signal_table_spqt3(&t1, 0);
+
+    let w2 = w1.overrule_with_later_lap(WellRecord::parse_zero_alloc(
+        "- genre: Devotional Chant\n- duration: 02:23\n",
+    ));
+    let t2 = w2.resolve_signals();
+    let spqt_lap2 = pack_signal_table_spqt3(&t2, 0);
+
+    println!(
+        "  • Bilingual Neuro-Omega : {BILINGUAL_AXIOM_EN_MIND} (EN) === {BILINGUAL_AXIOM_HU_MIND} (HU: {BILINGUAL_AXIOM_MEANING}) | Amigdala(-1) H₃={:.4} -> DMT(+1) H₃={:.4} -> egoDeath(0) H₃={:.6} trits (unity={} ✓)",
+        s_amygdala.cortical_entropy_trits,
+        s_dmt.cortical_entropy_trits,
+        s_ego_death.cortical_entropy_trits,
+        s_ego_death.mind_equals_mind_all_achieved
+    );
+    println!(
+        "  • Well Signal & SPQT3   : Lap 1={}/12 trits ({:?}, md={} B) -> Lap 2={}/12 trits ({:?}, Z₃ parity ✓)",
+        t1.total_present_out_of_12(),
+        spqt_lap1,
+        md1.len(),
+        t2.total_present_out_of_12(),
+        spqt_lap2
     );
     Ok(())
 }

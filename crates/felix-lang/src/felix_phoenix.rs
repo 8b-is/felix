@@ -73,14 +73,26 @@ pub fn felix_ternary_gemm_i32(acts: &[i16], trits: &[i8]) -> i32 {
 
 /// Packs 5 balanced trits (`{-1, 0, +1}`) into a single SPQT Base-243 byte (`0..242`).
 #[inline]
-pub fn pack_spqt_base243_byte(five_trits: &[i8; 5]) -> u8 {
+pub fn pack_spqt_base243_byte(five_trits: &[i8]) -> u8 {
     const POW3: [u8; 5] = [1, 3, 9, 27, 81];
     let mut acc = 0u8;
-    for i in 0..5 {
+    for i in 0..5.min(five_trits.len()) {
         let u = (five_trits[i].clamp(-1, 1) + 1) as u8;
         acc += u * POW3[i];
     }
     acc
+}
+
+/// Unpacks a single SPQT Base-243 byte (`0..242`) into 5 balanced trits (`{-1, 0, +1}`).
+#[inline]
+pub fn unpack_spqt_base243_byte(byte: u8) -> [i8; 5] {
+    const POW3: [u8; 5] = [1, 3, 9, 27, 81];
+    let mut out = [0i8; 5];
+    for i in 0..5 {
+        let u = (byte / POW3[i]) % 3;
+        out[i] = (u as i8) - 1;
+    }
+    out
 }
 
 /// Encodes a floating-point block scale into a 4-bit E2M1 nibble.
