@@ -592,8 +592,8 @@ pub fn build_canonical_mem8_recall_module(version: u32) -> Result<FelixPhoenixMo
     )
 }
 
-/// The 11 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_codegen_spark` + `felix_bench`).
-pub const SPARK_ARC_PACKAGES: [&str; 11] = [
+/// The 14 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_codegen_spark` + `embedded_quant_peter` + `felix_fpga_axis_spark` + `galaxia_crdt_spark` + `felix_bench`).
+pub const SPARK_ARC_PACKAGES: [&str; 14] = [
     "felix_nand_tcb",
     "felix_front",
     "felix_type",
@@ -602,6 +602,9 @@ pub const SPARK_ARC_PACKAGES: [&str; 11] = [
     "felix_verify",
     "felix_codegen",
     "felix_codegen_spark",
+    "embedded_quant_peter",
+    "felix_fpga_axis_spark",
+    "galaxia_crdt_spark",
     "phoenix_linker",
     "phoenix_vm",
     "felix_bench",
@@ -756,10 +759,10 @@ mod tests {
             .and_then(|p| p.parent())
             .expect("workspace root")
             .join("ada");
-        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 11 Ada/SPARK packages");
-        assert_eq!(audit.packages_verified, 11);
-        assert_eq!(audit.total_files, 22);
-        assert_eq!(audit.spark_mode_on_count, 22);
-        assert_eq!(audit.no_heap_restrictions_count, 22);
+        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 14 Ada/SPARK packages");
+        assert_eq!(audit.packages_verified, 14);
+        assert_eq!(audit.total_files, 28);
+        assert_eq!(audit.spark_mode_on_count, 28);
+        assert_eq!(audit.no_heap_restrictions_count, 28);
     }
 }

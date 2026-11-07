@@ -3,9 +3,7 @@
 //! Cycle-Accurate Rust RTL Co-Simulator & AXI4-Stream Driver for `felix_ternary_64x64_axis_top`.
 
 use crate::{
-    felix_phoenix::{
-        felix_ternary_gemm_i32, pack_spqt_base243_byte, CapEffectMask, CAP_ARENA, CAP_IO, CAP_M8,
-    },
+    felix_phoenix::{felix_ternary_gemm_i32, CapEffectMask},
     ljodatal_18_charms::CAP_ROOT_SEAL,
     omni_subsystems::futhark_cipher_simd::RokCipherKey,
 };

@@ -4,11 +4,10 @@
 //! and AXI4-Stream 512-bit streaming execution.
 
 use crate::{
-    felix_phoenix::{CapEffectMask, CAP_ARENA, CAP_IO, CAP_M8},
+    felix_phoenix::CapEffectMask,
     fpga_axis_ternary::{
         AxisBeat512, FpgaTernary64x64AxisCore, AXIS_CMD_DECODE_FUTHARK27, AXIS_CMD_EXEC_NAND_ARRAY,
-        AXIS_CMD_EXEC_TGEMM_PQ, AXIS_CMD_EXEC_TGEMM_RAW, AXIS_CMD_LOAD_WEIGHT_ROW,
-        AXIS_STATUS_CAP_VIOLATION, AXIS_STATUS_OK, AXIS_STATUS_YIELD_HOTSWAP,
+        AXIS_CMD_EXEC_TGEMM_PQ, AXIS_CMD_EXEC_TGEMM_RAW, AXIS_STATUS_OK,
     },
     ljodatal_18_charms::CAP_ROOT_SEAL,
     omni_subsystems::futhark_cipher_simd::RokCipherKey,

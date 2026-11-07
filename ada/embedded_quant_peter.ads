@@ -3,12 +3,12 @@ pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
-with Interfaces; use Interfaces;
+with Interfaces;     use Interfaces;
+with Felix_Nand_TCB; use Felix_Nand_TCB;
 
 package Embedded_Quant_Peter
   with Pure, SPARK_Mode => On
 is
-   subtype Balanced_Trit is Integer range -1 .. 1;
    type Phase_Mod_3 is mod 3;
 
    -- Isentropic cyclic rotation over the balanced triad {-1, 0, +1}

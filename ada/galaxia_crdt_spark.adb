@@ -1,4 +1,6 @@
 pragma SPARK_Mode (On);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
+pragma Restrictions (No_Exception_Propagation);
 
 package body Galaxia_Crdt_Spark
   with SPARK_Mode => On

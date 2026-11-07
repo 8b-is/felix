@@ -1,8 +1,9 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Exception_Propagation);
 
 with Interfaces;           use Interfaces;
+with Felix_Nand_TCB;       use Felix_Nand_TCB;
 with Embedded_Quant_Peter; use Embedded_Quant_Peter;
 
 package Felix_Fpga_Axis_Spark

@@ -3,8 +3,7 @@ fn test_agp_isa_64bit_bytecode_packetizer_and_streaming_execution() {
     use felix_lang::{
         agp_isa_packetizer::{
             AgpCapabilityGraph, AgpCapabilityNode, AgpInstruction, AgpStreamPacketizer,
-            AGP_FLAG_BARRIER_YIELD, AGP_FLAG_STANDARD, AGP_FLAG_TERMINAL, AGP_OP_CAP_ASSERT,
-            AGP_OP_DECODE_FUTHARK27, AGP_OP_FUTHARK_DEC, AGP_OP_LD_WEIGHT, AGP_OP_NAND_VEC,
+            AGP_FLAG_STANDARD, AGP_FLAG_TERMINAL, AGP_OP_CAP_ASSERT, AGP_OP_LD_WEIGHT,
             AGP_OP_SYNC_BARRIER, AGP_OP_TGEMM_PQ, AGP_OP_TGEMM_RAW,
         },
         felix_phoenix::{felix_ternary_gemm_i32, CAP_ARENA, CAP_IO, CAP_M8},
