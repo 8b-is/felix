@@ -199,6 +199,44 @@ impl ErdosLodriOmniversalEngine {
             the_book_q_e_d: qed,
         }
     }
+
+    /// Counts distinct prime factors `\omega(n)` for the Erdős–Kac normal order `ln(ln(n))`.
+    pub fn distinct_prime_factors_omega(mut n: u64) -> u32 {
+        if n < 2 {
+            return 0;
+        }
+        let mut count = 0u32;
+        if n.is_multiple_of(2) {
+            count += 1;
+            while n.is_multiple_of(2) {
+                n /= 2;
+            }
+        }
+        let mut d = 3u64;
+        while d.saturating_mul(d) <= n {
+            if n.is_multiple_of(d) {
+                count += 1;
+                while n.is_multiple_of(d) {
+                    n /= d;
+                }
+            }
+            d += 2;
+        }
+        if n > 1 {
+            count += 1;
+        }
+        count
+    }
+
+    /// Verifies the Erdős–Rado sunflower kernel condition `(petal_a & petal_b) == origo_core`.
+    #[inline]
+    pub fn verify_sunflower_origo_kernel(
+        petal_a_mask: u64,
+        petal_b_mask: u64,
+        origo_core_mask: u64,
+    ) -> bool {
+        origo_core_mask != 0 && (petal_a_mask & petal_b_mask) == origo_core_mask
+    }
 }
 
 #[cfg(test)]
@@ -221,5 +259,16 @@ mod tests {
     fn test_stride_three_zero_discrepancy() {
         let engine = ErdosLodriOmniversalEngine::default();
         assert_eq!(engine.evaluate_stride_discrepancy(3), 0.0);
+    }
+
+    #[test]
+    fn test_erdos_kac_omega_and_sunflower_kernel() {
+        assert_eq!(ErdosLodriOmniversalEngine::distinct_prime_factors_omega(2 * 3 * 5 * 7), 4);
+        assert_eq!(ErdosLodriOmniversalEngine::distinct_prime_factors_omega(1024), 1);
+        assert!(ErdosLodriOmniversalEngine::verify_sunflower_origo_kernel(
+            0b1011_0001,
+            0b0101_0001,
+            0b0001_0001
+        ));
     }
 }
