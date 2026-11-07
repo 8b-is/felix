@@ -56,6 +56,7 @@ pub mod parser;
 pub mod phoenix;
 pub mod phoenix_cap_abi;
 pub mod q6_hamming_and_gain_scheduler;
+pub mod quant_ultra_graphs;
 pub mod ratio;
 pub mod self_other_hypercube_inference;
 pub mod signed_ternary_graph;
