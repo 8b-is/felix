@@ -382,6 +382,12 @@ pub mod ultra_zeno {
         pub active_slots: usize,
     }
 
+    impl<const N: usize> Default for WaveContinuityLedger<N> {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl<const N: usize> WaveContinuityLedger<N> {
         pub const fn new() -> Self {
             Self { active_slots: N }

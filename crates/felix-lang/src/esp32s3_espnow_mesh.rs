@@ -61,18 +61,20 @@ pub fn compute_frame_pcc_seal(bytes: &[u8]) -> u64 {
     h
 }
 
+pub type QuantVoiceEncodedTuple = (
+    i16,
+    [u8; VOICE_P_PLANE_BYTES],
+    [u8; VOICE_Q_PLANE_BYTES],
+    [(i16, i16); 8],
+);
+
 /// Encodes 640 16-bit PCM voice samples into 128 SPQT Base-243 P-plane bytes (`640 / 5 = 128`),
 /// 10 E2M1 Q-plane scale bytes (`20 x 4-bit`), and an 8-mode Sleipnir Q15 harmonic summary.
 pub fn encode_pcm640_to_quant_tern_pq(
     pcm_640: &[i16; VOICE_FRAME_TRITS],
     base_step_q: u16,
     bend_k: u8,
-) -> (
-    i16,
-    [u8; VOICE_P_PLANE_BYTES],
-    [u8; VOICE_Q_PLANE_BYTES],
-    [(i16, i16); 8],
-) {
+) -> QuantVoiceEncodedTuple {
     let pred_init = pcm_640[0];
     let step = (base_step_q.max(1)) as i32;
     let mut trits = [0i8; VOICE_FRAME_TRITS];
@@ -102,9 +104,7 @@ pub fn encode_pcm640_to_quant_tern_pq(
 
     let mut q_plane = [0u8; VOICE_Q_PLANE_BYTES];
     let nib = encode_e2m1_nibble(1.0);
-    for b in &mut q_plane {
-        *b = (nib << 4) | (nib & 0x0F);
-    }
+    q_plane.fill((nib << 4) | (nib & 0x0F));
 
     let mut wave_q15 = [(0i16, 0i16); 8];
     for (m, slot) in wave_q15.iter_mut().enumerate() {
@@ -210,11 +210,11 @@ impl EspNowQuantVoiceFrame {
                 u32::from_le_bytes(buf[24 + i * 4..28 + i * 4].try_into().unwrap());
         }
         let mut sleipnir_wave_q15 = [(0i16, 0i16); 8];
-        for m in 0..8 {
+        for (m, slot) in sleipnir_wave_q15.iter_mut().enumerate() {
             let base = 36 + m * 4;
             let re = i16::from_le_bytes(buf[base..base + 2].try_into().unwrap());
             let im = i16::from_le_bytes(buf[base + 2..base + 4].try_into().unwrap());
-            sleipnir_wave_q15[m] = (re, im);
+            *slot = (re, im);
         }
         let mut p_plane_base243 = [0u8; VOICE_P_PLANE_BYTES];
         p_plane_base243.copy_from_slice(&buf[68..196]);

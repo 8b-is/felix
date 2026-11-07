@@ -718,8 +718,8 @@ mod tests {
             ));
 
             let mut w_block = [0u8; CAP_BLOCK_BYTES];
-            for g in 0..13 {
-                w_block[g] = pack_spqt_base243_byte(&[-1, -1, -1, -1, -1]);
+            for slot in w_block.iter_mut().take(13) {
+                *slot = pack_spqt_base243_byte(&[-1, -1, -1, -1, -1]);
             }
             table
                 .invoke_cap(h_arena, PhoenixCapOp::ArenaWrite64B { data: w_block })

@@ -48,7 +48,7 @@ pub fn sha256_digest(data: &[u8]) -> [u8; 32] {
     ];
 
     let bit_len = (data.len() as u64).wrapping_mul(8);
-    let mut padded = Vec::with_capacity(((data.len() + 9 + 63) / 64) * 64);
+    let mut padded = Vec::with_capacity((data.len() + 9).div_ceil(64) * 64);
     padded.extend_from_slice(data);
     padded.push(0x80);
     while (padded.len() % 64) != 56 {

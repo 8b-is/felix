@@ -160,7 +160,7 @@ pub fn unpack_signal_table_spqt3(
     }
 
     let sum_u: u8 = unbent_15.iter().map(|&t| (t + 1) as u8).sum();
-    if sum_u % 3 != 0 {
+    if !sum_u.is_multiple_of(3) {
         return Err(WellSpqtDecodeError::Z3ParityMismatch {
             sum_mod3: sum_u % 3,
         });
@@ -237,10 +237,10 @@ pub fn overrule_signal_table_direct(
     later: &SignalResolutionTable,
 ) -> SignalResolutionTable {
     let mut merged_regs = earlier.registers;
-    for r in 0..4 {
+    for (r, reg) in merged_regs.iter_mut().enumerate() {
         for c in 0..3 {
             if later.registers[r].trits[c] != SignalTrit::Empty {
-                merged_regs[r].trits[c] = later.registers[r].trits[c];
+                reg.trits[c] = later.registers[r].trits[c];
             }
         }
     }

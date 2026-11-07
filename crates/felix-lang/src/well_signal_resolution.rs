@@ -548,7 +548,7 @@ fn eq_ignore_ascii_case(a: &str, b: &str) -> bool {
     a.as_bytes()
         .iter()
         .zip(b.as_bytes().iter())
-        .all(|(&x, &y)| x.to_ascii_lowercase() == y.to_ascii_lowercase())
+        .all(|(&x, &y)| x.eq_ignore_ascii_case(&y))
 }
 
 #[inline]
