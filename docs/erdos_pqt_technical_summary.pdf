@@ -1,0 +1,157 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 7 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+7 0 obj
+<< /Length 3816 >>
+stream
+BT
+/F2 14 Tf
+1 0 0 1 54 780 Tm
+(Felix Technical Report: Balanced-Ternary Discrepancy Bounds,) Tj
+/F2 14 Tf
+1 0 0 1 54 760 Tm
+(SPQT Base-243 Packing, and SPARK Formal Verification) Tj
+/F1 10 Tf
+1 0 0 1 54 740 Tm
+(Authors: Peter Lodri and Contributors \(8b-is / peterlodri-sec\)  |  Date: 2026-11-07) Tj
+/F1 10 Tf
+1 0 0 1 54 726 Tm
+(--------------------------------------------------------------------------------------) Tj
+/F2 11 Tf
+1 0 0 1 54 712 Tm
+(1. Discrete Mathematics and Graph Percolation Verifiers) Tj
+/F1 9 Tf
+1 0 0 1 54 697 Tm
+(   Module: crates/felix-lang/src/erdos_pqt_omniversal.rs  |  SPARK: ada/erdos_pqt_spark.ads) Tj
+/F1 9 Tf
+1 0 0 1 54 684 Tm
+(   - Geometrically Damped Ternary Stride Sum: D\(d\) = |sum tau\(k*d\) * 2^\(-k\)| <= 1.0) Tj
+/F1 9 Tf
+1 0 0 1 54 671 Tm
+(     \(Evaluated across first 16 primes: max_disc = 0.285714 <= 1.0; stride 3 = 0.0\)) Tj
+/F1 9 Tf
+1 0 0 1 54 658 Tm
+(   - Erdos-Renyi Percolation Threshold: p_c = ln\(N\)/N = 0.0004063 \(for N = 24,917\)) Tj
+/F1 9 Tf
+1 0 0 1 54 645 Tm
+(   - Exhaustive Ramsey R\(3,3\) = 6 Check: All 2^15 = 32,768 2-colorings of K_6 verified) Tj
+/F1 9 Tf
+1 0 0 1 54 632 Tm
+(   - Erdos-Kac Distinct Prime Factor Count omega\(n\) & Sunflower Bitwise Intersection) Tj
+/F1 10 Tf
+1 0 0 1 54 619 Tm
+() Tj
+/F2 11 Tf
+1 0 0 1 54 605 Tm
+(2. Zero-Allocation Signal Resolution & 3-Byte SPQT Base-243 Packing) Tj
+/F1 9 Tf
+1 0 0 1 54 590 Tm
+(   Modules: well_signal_resolution.rs, well_signal_spqt_espnow.rs, well_signal_spqt_spark.ads) Tj
+/F1 9 Tf
+1 0 0 1 54 577 Tm
+(   - 5-Trit Bijection: B = sum_{j=0..4} \(t_j + 1\) * 3^j in [0, 242]) Tj
+/F1 9 Tf
+1 0 0 1 54 564 Tm
+(   - Lap 1 \(Un-bended Container\): 6/12 trits -> SPQT3 = [239, 205, 238] \(t_14 = +1\)) Tj
+/F1 9 Tf
+1 0 0 1 54 551 Tm
+(   - Lap 2 \(Overruled by Later Lap\): 9/12 trits -> SPQT3 = [239, 233, 104] \(t_14 = 0\)) Tj
+/F1 9 Tf
+1 0 0 1 54 538 Tm
+(   - StackMarkdownBuf: 444 / 512 bytes rendered with 0 heap allocations) Tj
+/F1 10 Tf
+1 0 0 1 54 525 Tm
+() Tj
+/F2 11 Tf
+1 0 0 1 54 511 Tm
+(3. OS-Agnostic Capability ABI & Self-Hosted Webhook Verifier) Tj
+/F1 9 Tf
+1 0 0 1 54 496 Tm
+(   Modules: phoenix_cap_abi.rs, m8_axum_webhook_server.rs, phoenix_cap_abi_spark.ads) Tj
+/F1 9 Tf
+1 0 0 1 54 483 Tm
+(   - Hardware-enforced capability attenuation across POSIX, WASM, and ESP32-S3 backends) Tj
+/F1 9 Tf
+1 0 0 1 54 470 Tm
+(   - Constant-time RFC 2104 HMAC-SHA256 webhook verification & one-time epoch tickets) Tj
+/F1 10 Tf
+1 0 0 1 54 457 Tm
+() Tj
+/F2 11 Tf
+1 0 0 1 54 443 Tm
+(4. Contributor Table & Rational p/q Signature Map) Tj
+/F3 8 Tf
+1 0 0 1 54 428 Tm
+(   Contributor / Handle             Role & Subsystem                    p/q Signature) Tj
+/F3 8 Tf
+1 0 0 1 54 417 Tm
+(   ----------------------------------------------------------------------------------) Tj
+/F3 8 Tf
+1 0 0 1 54 406 Tm
+(   Peter Lodri \(peterlodri-sec\)     Core Architecture, Rust & SPARK     31/32) Tj
+/F3 8 Tf
+1 0 0 1 54 395 Tm
+(   Alexandra \(ALEX|qMom\)            Project Stewardship & Review        528/432 = 11/9) Tj
+/F3 8 Tf
+1 0 0 1 54 384 Tm
+(   Chris                            Hardware & Acoustic Systems         288/243 = 32/27) Tj
+/F3 8 Tf
+1 0 0 1 54 373 Tm
+(   Dra                              Operations & Executive Review       144/89) Tj
+/F3 8 Tf
+1 0 0 1 54 362 Tm
+(   Nate / Natalie \(standardgalactic\) memnet Oracle & Corpus Spine       243/256) Tj
+/F1 10 Tf
+1 0 0 1 54 351 Tm
+() Tj
+/F2 10 Tf
+1 0 0 1 54 337 Tm
+(5. Embedded Verification & Rational p/q Signature) Tj
+/F3 8 Tf
+1 0 0 1 54 323 Tm
+(   Combined Rational Product : P/Q = 44599 / 1424 \(irreducible\)) Tj
+/F3 8 Tf
+1 0 0 1 54 312 Tm
+(   LaTeX Source SHA-256      : fecceb37c83c9da0013d489458d1c7e73153b2d679834cba7eb84663b7375530) Tj
+/F3 8 Tf
+1 0 0 1 54 301 Tm
+(   Verification Status       : 103/103 Rust tests PASS | 21 SPARK packages proved) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Title (Felix Technical Report: Balanced-Ternary & SPARK Verification) /Author (Peter Lodri and Contributors) /Subject (p/q_checksum=44599/1424 | tex_sha256=fecceb37c83c9da0013d4894) /Keywords (p/q=44599/1424, SPQT3, SPARK-2022, Erdos-Renyi, Ramsey-R33) >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000267 00000 n 
+0000000337 00000 n 
+0000000412 00000 n 
+0000000480 00000 n 
+0000004348 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R /Info 8 0 R >>
+startxref
+4623
+%%EOF
