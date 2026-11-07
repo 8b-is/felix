@@ -75,9 +75,18 @@ pub enum PhoenixCapOp {
 pub enum CapAbiFault {
     UnalignedHandleOffset(u8),
     Charm18RootSealForbidden,
-    TernaryPermissionDenied { trit_perm: i8, attempted_write: bool },
-    StaleEpochUseAfterFree { handle_epoch: u8, current_epoch: u8 },
-    FutharkTagMismatch { handle_tag: u8, slot_tag: u8 },
+    TernaryPermissionDenied {
+        trit_perm: i8,
+        attempted_write: bool,
+    },
+    StaleEpochUseAfterFree {
+        handle_epoch: u8,
+        current_epoch: u8,
+    },
+    FutharkTagMismatch {
+        handle_tag: u8,
+        slot_tag: u8,
+    },
     SliceBoundsOverflow {
         offset_blocks: u32,
         xfer_blocks: u32,
@@ -586,7 +595,8 @@ impl<B: PhoenixArenaBackend> PhoenixCapabilityAbiTable<B> {
                         let end = (start + CAP_BLOCK_BYTES).min(md_bytes.len());
                         block[..end - start].copy_from_slice(&md_bytes[start..end]);
                     }
-                    self.backend.write_block_64b(dst_blk + (b_idx as u32), &block);
+                    self.backend
+                        .write_block_64b(dst_blk + (b_idx as u32), &block);
                 }
 
                 Ok(CapInvokeResult {
@@ -679,7 +689,9 @@ impl<B: PhoenixArenaBackend> PhoenixCapabilityAbiTable<B> {
 mod tests {
     use super::*;
     use crate::{
-        esp32s3_espnow_mesh::{Esp32S3MeshNodeBridge, MeshPoleNode, ESPNOW_BROADCAST_MAC, VOICE_FRAME_TRITS},
+        esp32s3_espnow_mesh::{
+            Esp32S3MeshNodeBridge, MeshPoleNode, ESPNOW_BROADCAST_MAC, VOICE_FRAME_TRITS,
+        },
         felix_phoenix::pack_spqt_base243_byte,
         well_signal_spqt_espnow::pack_signal_table_spqt3,
     };
@@ -732,10 +744,16 @@ mod tests {
             let h_arena_blk1 = VirtualCapHandle64::encode(1, 1, 11, 1, 0);
             let h_arena_blk2 = VirtualCapHandle64::encode(1, 1, 11, 2, 0);
             table
-                .invoke_cap(h_arena_blk1, PhoenixCapOp::ArenaWrite64B { data: act_block })
+                .invoke_cap(
+                    h_arena_blk1,
+                    PhoenixCapOp::ArenaWrite64B { data: act_block },
+                )
                 .unwrap();
             table
-                .invoke_cap(h_arena_blk2, PhoenixCapOp::ArenaWrite64B { data: act_block })
+                .invoke_cap(
+                    h_arena_blk2,
+                    PhoenixCapOp::ArenaWrite64B { data: act_block },
+                )
                 .unwrap();
 
             let tgemm_res = table

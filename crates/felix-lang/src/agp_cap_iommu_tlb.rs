@@ -3,8 +3,7 @@
 //! 27-Way Futhark Cube IOMMU TLB & 7-Gate Zero-Trust Capability Handle Translator (`VirtualCapHandle64`).
 
 use crate::{
-    agp_dma_ring_sim::SimulatedHostAxiMemory,
-    felix_phoenix::CapEffectMask,
+    agp_dma_ring_sim::SimulatedHostAxiMemory, felix_phoenix::CapEffectMask,
     ljodatal_18_charms::CAP_ROOT_SEAL,
 };
 use serde::{Deserialize, Serialize};

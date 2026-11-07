@@ -291,13 +291,7 @@ pub fn verify_isentropic_bend_whitening(
     let mut packed_unbent = vec![0u8; packed_len];
     let mut packed_bent = vec![0u8; packed_len];
 
-    quantize_bend_pack_row_simd(
-        skewed_weights,
-        thresholds,
-        centroids,
-        0,
-        &mut packed_unbent,
-    );
+    quantize_bend_pack_row_simd(skewed_weights, thresholds, centroids, 0, &mut packed_unbent);
     quantize_bend_pack_row_simd(
         skewed_weights,
         thresholds,
@@ -403,13 +397,8 @@ pub fn evaluate_omni_ternary_theory_of_all() -> Result<OmniTernarySynthesisRepor
 
     // Compute normalized MSE distortion D on the 2048-d row
     let mut packed_410 = [0u8; PACKED_LATENT_ROW_BYTES];
-    let sse_u64 = quantize_bend_pack_row_simd(
-        &skewed_weights,
-        thresholds,
-        centroids,
-        2,
-        &mut packed_410,
-    );
+    let sse_u64 =
+        quantize_bend_pack_row_simd(&skewed_weights, thresholds, centroids, 2, &mut packed_410);
     let norm_mse = (sse_u64 as f64) / ((ERNIE55_LATENT_DIM as f64) * 65_025.0);
 
     // 3. Ada/SPARK `EmbeddedQuantPeter` 6-Language Parity Check
@@ -485,17 +474,35 @@ pub fn evaluate_omni_ternary_theory_of_all() -> Result<OmniTernarySynthesisRepor
 
     // 8. Priority-Weighted Rayon DAG Schedule over the 3-Axis W-S-T Pipeline
     let wst_cards = vec![
-        StudyCardNode { id: 0, title: "W-Axis: 5-Trit Quantize + Ada/SPARK PCC".into(), duration: 15, predecessors: vec![] },
-        StudyCardNode { id: 1, title: "S-Axis: Rök 27-Cube + FELIX vpternlogd JIT".into(), duration: 12, predecessors: vec![] },
-        StudyCardNode { id: 2, title: "T-Axis: ERNIE 5.5 1:6 MLA/HCA + LatentMoE".into(), duration: 25, predecessors: vec![0] },
-        StudyCardNode { id: 3, title: "Omni Sink: ECHO Layer-42 + Jury PID Bind".into(), duration: 18, predecessors: vec![1, 2] },
+        StudyCardNode {
+            id: 0,
+            title: "W-Axis: 5-Trit Quantize + Ada/SPARK PCC".into(),
+            duration: 15,
+            predecessors: vec![],
+        },
+        StudyCardNode {
+            id: 1,
+            title: "S-Axis: Rök 27-Cube + FELIX vpternlogd JIT".into(),
+            duration: 12,
+            predecessors: vec![],
+        },
+        StudyCardNode {
+            id: 2,
+            title: "T-Axis: ERNIE 5.5 1:6 MLA/HCA + LatentMoE".into(),
+            duration: 25,
+            predecessors: vec![0],
+        },
+        StudyCardNode {
+            id: 3,
+            title: "Omni Sink: ECHO Layer-42 + Jury PID Bind".into(),
+            duration: 18,
+            predecessors: vec![1, 2],
+        },
     ];
-    let dag_rep: DagScheduleExecutionReport<usize> = execute_dag_priority_rayon(
-        &wst_cards,
-        4,
-        &McpProgressEmitter::default(),
-        |id, _| Ok(id),
-    )?;
+    let dag_rep: DagScheduleExecutionReport<usize> =
+        execute_dag_priority_rayon(&wst_cards, 4, &McpProgressEmitter::default(), |id, _| {
+            Ok(id)
+        })?;
 
     let crit_u = dag_rep.prerequisite_analysis.critical_path_duration;
     let seq_u = dag_rep.prerequisite_analysis.sequential_total_duration;
@@ -518,7 +525,10 @@ pub fn evaluate_omni_ternary_theory_of_all() -> Result<OmniTernarySynthesisRepor
         && whitening.bent_marginal_entropy_trits > 0.99
         && ada_ok
         && futhark_ok
-        && hlidskjalf.valknut_jury_pid_bind.jury_certificate.is_jury_stable
+        && hlidskjalf
+            .valknut_jury_pid_bind
+            .jury_certificate
+            .is_jury_stable
         && dag_rep.causal_dependencies_satisfied
         && riddle_ok;
 

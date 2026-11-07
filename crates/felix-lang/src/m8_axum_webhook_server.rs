@@ -11,8 +11,7 @@ use crate::{
     ljodatal_18_charms::{verify_charm_18_sovereign_secrecy, CAP_ROOT_SEAL},
     m8_genesis_container::{fnv1a_64_const, M8PersonaContainer, OMNI_GENESIS_SEED_PHRASE},
     phoenix_cap_abi::{
-        CapAbiFault, PhoenixArenaBackend, PhoenixCapOp, PhoenixCapabilityAbiTable,
-        CAP_BLOCK_BYTES,
+        CapAbiFault, PhoenixArenaBackend, PhoenixCapOp, PhoenixCapabilityAbiTable, CAP_BLOCK_BYTES,
     },
     well_signal_resolution::WellRecord,
     well_signal_spqt_espnow::{pack_signal_table_spqt3, WELL_SIGNAL_SPQT_BYTES},
@@ -43,8 +42,8 @@ const SHA256_K: [u32; 64] = [
 /// Computes the exact FIPS 180-4 SHA-256 digest of `data`.
 pub fn sha256_digest(data: &[u8]) -> [u8; 32] {
     let mut state: [u32; 8] = [
-        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
+        0x5be0cd19,
     ];
 
     let bit_len = (data.len() as u64).wrapping_mul(8);
@@ -383,7 +382,8 @@ impl<B: PhoenixArenaBackend> M8CommerceWebhookServer<B> {
             }
         }
 
-        let ts = timestamp_opt.ok_or(WebhookVerificationError::MissingOrMalformedSignatureHeader)?;
+        let ts =
+            timestamp_opt.ok_or(WebhookVerificationError::MissingOrMalformedSignatureHeader)?;
         let received_hmac = sig_v1_opt.ok_or(WebhookVerificationError::InvalidHexSignature)?;
 
         Self::verify_replay_window(ts, server_now_unix)?;
@@ -405,11 +405,7 @@ impl<B: PhoenixArenaBackend> M8CommerceWebhookServer<B> {
             ));
         }
 
-        self.mint_idempotent_m8_ticket(
-            PaymentGatewayPole::StripePlus,
-            payload,
-            server_now_unix,
-        )
+        self.mint_idempotent_m8_ticket(PaymentGatewayPole::StripePlus, payload, server_now_unix)
     }
 
     // ------------------------------------------------------------------------
@@ -458,11 +454,7 @@ impl<B: PhoenixArenaBackend> M8CommerceWebhookServer<B> {
             ));
         }
 
-        self.mint_idempotent_m8_ticket(
-            PaymentGatewayPole::RevolutZero,
-            payload,
-            server_now_unix,
-        )
+        self.mint_idempotent_m8_ticket(PaymentGatewayPole::RevolutZero, payload, server_now_unix)
     }
 
     // ------------------------------------------------------------------------
@@ -514,11 +506,7 @@ impl<B: PhoenixArenaBackend> M8CommerceWebhookServer<B> {
             ));
         }
 
-        self.mint_idempotent_m8_ticket(
-            PaymentGatewayPole::PayPalMinus,
-            payload,
-            server_now_unix,
-        )
+        self.mint_idempotent_m8_ticket(PaymentGatewayPole::PayPalMinus, payload, server_now_unix)
     }
 
     #[inline]
@@ -598,7 +586,8 @@ impl<B: PhoenixArenaBackend> M8CommerceWebhookServer<B> {
             let end = (start + CAP_BLOCK_BYTES).min(m8_bytes.len());
             line[..end - start].copy_from_slice(&m8_bytes[start..end]);
 
-            let blk_handle = VirtualCapHandle64::encode(1, slot_id, futhark_tag_r2, b_idx as u32, 0);
+            let blk_handle =
+                VirtualCapHandle64::encode(1, slot_id, futhark_tag_r2, b_idx as u32, 0);
             self.cap_table
                 .invoke_cap(blk_handle, PhoenixCapOp::ArenaWrite64B { data: line })
                 .map_err(WebhookVerificationError::CapabilityAccessFault)?;

@@ -170,16 +170,52 @@ impl<'a> WellRecord<'a> {
     /// Any populated field in `later` overrides the corresponding slot in `self`.
     pub const fn overrule_with_later_lap(self, later: Self) -> Self {
         Self {
-            source: if later.source.is_some() { later.source } else { self.source },
-            kind: if later.kind.is_some() { later.kind } else { self.kind },
-            title: if later.title.is_some() { later.title } else { self.title },
-            artist: if later.artist.is_some() { later.artist } else { self.artist },
-            album: if later.album.is_some() { later.album } else { self.album },
-            year: if later.year.is_some() { later.year } else { self.year },
+            source: if later.source.is_some() {
+                later.source
+            } else {
+                self.source
+            },
+            kind: if later.kind.is_some() {
+                later.kind
+            } else {
+                self.kind
+            },
+            title: if later.title.is_some() {
+                later.title
+            } else {
+                self.title
+            },
+            artist: if later.artist.is_some() {
+                later.artist
+            } else {
+                self.artist
+            },
+            album: if later.album.is_some() {
+                later.album
+            } else {
+                self.album
+            },
+            year: if later.year.is_some() {
+                later.year
+            } else {
+                self.year
+            },
             year_malformed: later.year_malformed,
-            genre: if later.genre.is_some() { later.genre } else { self.genre },
-            url: if later.url.is_some() { later.url } else { self.url },
-            duration: if later.duration.is_some() { later.duration } else { self.duration },
+            genre: if later.genre.is_some() {
+                later.genre
+            } else {
+                self.genre
+            },
+            url: if later.url.is_some() {
+                later.url
+            } else {
+                self.url
+            },
+            duration: if later.duration.is_some() {
+                later.duration
+            } else {
+                self.duration
+            },
             track_count: if later.track_count.is_some() {
                 later.track_count
             } else {
@@ -224,9 +260,7 @@ impl<'a> WellRecord<'a> {
         };
 
         let url_trit = match self.url {
-            Some(u) if u.starts_with("http://") || u.starts_with("https://") => {
-                SignalTrit::Present
-            }
+            Some(u) if u.starts_with("http://") || u.starts_with("https://") => SignalTrit::Present,
             Some(_) => SignalTrit::Contradictory,
             None => SignalTrit::Empty,
         };
@@ -267,8 +301,7 @@ impl<'a> WellRecord<'a> {
             .map(is_unattached_title_case_personal_name)
             .unwrap_or(false);
 
-        let is_thin_object =
-            self.kind.is_some() && self.album.is_none() && self.genre.is_none();
+        let is_thin_object = self.kind.is_some() && self.album.is_none() && self.genre.is_none();
 
         let pcc_seal_u64 = compute_resolution_fnv1a(&registers);
 

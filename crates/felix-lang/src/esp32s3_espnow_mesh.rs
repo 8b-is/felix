@@ -201,13 +201,13 @@ impl EspNowQuantVoiceFrame {
             _ => MeshPoleNode::AllFatherIngress,
         };
         let seq_num = u16::from_le_bytes(buf[6..8].try_into().unwrap());
-        let virt_cap_handle = VirtualCapHandle64(u64::from_le_bytes(buf[8..16].try_into().unwrap()));
+        let virt_cap_handle =
+            VirtualCapHandle64(u64::from_le_bytes(buf[8..16].try_into().unwrap()));
         let predictor_init_i16 = i16::from_le_bytes(buf[20..22].try_into().unwrap());
         let base_step_q = u16::from_le_bytes(buf[22..24].try_into().unwrap());
         let mut triadic_vclock = [0u32; 3];
         for i in 0..3 {
-            triadic_vclock[i] =
-                u32::from_le_bytes(buf[24 + i * 4..28 + i * 4].try_into().unwrap());
+            triadic_vclock[i] = u32::from_le_bytes(buf[24 + i * 4..28 + i * 4].try_into().unwrap());
         }
         let mut sleipnir_wave_q15 = [(0i16, 0i16); 8];
         for (m, slot) in sleipnir_wave_q15.iter_mut().enumerate() {

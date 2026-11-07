@@ -57,9 +57,7 @@ impl ComplexWave {
 }
 
 /// First 16 rational primes driving the PqT harmonic modes.
-pub const PQT_PRIMES: [usize; 16] = [
-    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
-];
+pub const PQT_PRIMES: [usize; 16] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53];
 
 /// Snapshot of the Erdős–Lodri PqT continuity verification.
 #[derive(Clone, Debug)]
@@ -263,8 +261,14 @@ mod tests {
 
     #[test]
     fn test_erdos_kac_omega_and_sunflower_kernel() {
-        assert_eq!(ErdosLodriOmniversalEngine::distinct_prime_factors_omega(2 * 3 * 5 * 7), 4);
-        assert_eq!(ErdosLodriOmniversalEngine::distinct_prime_factors_omega(1024), 1);
+        assert_eq!(
+            ErdosLodriOmniversalEngine::distinct_prime_factors_omega(2 * 3 * 5 * 7),
+            4
+        );
+        assert_eq!(
+            ErdosLodriOmniversalEngine::distinct_prime_factors_omega(1024),
+            1
+        );
         assert!(ErdosLodriOmniversalEngine::verify_sunflower_origo_kernel(
             0b1011_0001,
             0b0101_0001,

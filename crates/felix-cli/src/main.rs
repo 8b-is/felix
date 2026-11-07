@@ -209,8 +209,16 @@ fn cmd_phoenix() -> Result<(), Fail> {
         QuantTernBlock32::FP16_BITS_PER_32 as f64 / QuantTernBlock32::BITS_PER_32_TRITS as f64
     );
     println!("  • Tier-1 TCB (6 Ops)   : nand, ld, st, br/call/ret, cap (0x{:02x}), yield (@hotswappable)", vm.active_module.pcc.declared_effects);
-    println!("  • FELIX-VERIFY PCC v1  : {} (contract={})", &hash_v1[..32], &contract_hash[..16]);
-    println!("  • PHOENIX Hot-Swap v2  : {} (epoch={} @ yield safe-point)", &hash_v2[..32], vm.hotswap_epoch);
+    println!(
+        "  • FELIX-VERIFY PCC v1  : {} (contract={})",
+        &hash_v1[..32],
+        &contract_hash[..16]
+    );
+    println!(
+        "  • PHOENIX Hot-Swap v2  : {} (epoch={} @ yield safe-point)",
+        &hash_v2[..32],
+        vm.hotswap_epoch
+    );
     let nand_pos = felix_kleene_nand_trit_asm(1, 1);
     let nand_neg = felix_kleene_nand_trit_asm(-1, 1);
     let nand_zero = felix_kleene_nand_trit_asm(0, 1);
@@ -255,10 +263,8 @@ fn cmd_omni() -> Result<(), Fail> {
     let jit_page = JitExecutablePage::compile_host_native_trampoline(CAP_IO | CAP_ARENA)
         .map_err(Fail::Usage)?;
     let acts = [10i16, -20, 30, 40, -50, 60, 70, -80, 90, 100];
-    let qtensor = QuantTernPQTensor::pack(
-        &[1, -1, 0, 1, 0, -1, 1, -1, 0, 1],
-        &[0.5, 1.0, 2.0, 0.5],
-    );
+    let qtensor =
+        QuantTernPQTensor::pack(&[1, -1, 0, 1, 0, -1, 1, -1, 0, 1], &[0.5, 1.0, 2.0, 0.5]);
     let mut bridge = JitRuntimeBridge {
         hotswap_pending: 0,
         granted_caps: CAP_IO | CAP_ARENA,

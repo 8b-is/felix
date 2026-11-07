@@ -88,12 +88,7 @@ pub struct NativeCodegenArtifact {
 
 /// Encodes a 7-byte x86-64 AVX-512 EVEX `vpternlogd zmm_dst, zmm_src1, zmm_src2, imm8` instruction.
 #[inline]
-pub fn encode_x86_64_evex_vpternlogd(
-    zmm_dst: u8,
-    zmm_src1: u8,
-    zmm_src2: u8,
-    imm8: u8,
-) -> [u8; 7] {
+pub fn encode_x86_64_evex_vpternlogd(zmm_dst: u8, zmm_src1: u8, zmm_src2: u8, imm8: u8) -> [u8; 7] {
     let dst_3 = zmm_dst & 0x07;
     let src1_4 = (!zmm_src1) & 0x0F;
     let src2_3 = zmm_src2 & 0x07;
@@ -125,7 +120,7 @@ pub fn encode_x86_64_vex_vpmaddwd_vpaddd(
 
     [
         0xC5, p0_madd, 0xF5, modrm_madd, // vpmaddwd ymm_tmp, ymm_acts, ymm_trits
-        0xC5, p0_add, 0xFE, modrm_add,   // vpaddd   ymm_acc, ymm_acc, ymm_tmp
+        0xC5, p0_add, 0xFE, modrm_add, // vpaddd   ymm_acc, ymm_acc, ymm_tmp
     ]
 }
 
@@ -165,12 +160,8 @@ pub fn emit_x86_64_avx512_module(module: &PccModule) -> Result<NativeCodegenArti
                     // Dual-rail 512-bit Ternary NAND via two EVEX `vpternlogd` instructions:
                     // 1) pos_out = neg1 | neg2 (imm8 = 0xFC)
                     // 2) neg_out = pos1 & pos2 (imm8 = 0xC0)
-                    let insn_pos = encode_x86_64_evex_vpternlogd(
-                        *dst as u8,
-                        *src1 as u8,
-                        *src2 as u8,
-                        0xFC,
-                    );
+                    let insn_pos =
+                        encode_x86_64_evex_vpternlogd(*dst as u8, *src1 as u8, *src2 as u8, 0xFC);
                     let insn_neg = encode_x86_64_evex_vpternlogd(
                         (*dst as u8).wrapping_add(1),
                         (*src1 as u8).wrapping_add(1),
@@ -200,10 +191,8 @@ pub fn emit_x86_64_avx512_module(module: &PccModule) -> Result<NativeCodegenArti
                 FelixSsaOp::TGemm { dst, .. } => {
                     // Fused `vpternlogd` sign-mux (0xCA) + `vpmaddwd` + `vpaddd` loop body
                     tgemm_sites.push(code.len());
-                    let sign_mux =
-                        encode_x86_64_evex_vpternlogd((*dst as u8) & 7, 1, 2, 0xCA);
-                    let madd_pair =
-                        encode_x86_64_vex_vpmaddwd_vpaddd((*dst as u8) & 7, 3, 1, 2);
+                    let sign_mux = encode_x86_64_evex_vpternlogd((*dst as u8) & 7, 1, 2, 0xCA);
+                    let madd_pair = encode_x86_64_vex_vpmaddwd_vpaddd((*dst as u8) & 7, 3, 1, 2);
                     code.extend_from_slice(&sign_mux);
                     code.extend_from_slice(&madd_pair);
                     vpternlogd_count += 1;
@@ -475,15 +464,15 @@ impl JitExecutablePage {
         {
             let req = required_caps.to_le_bytes();
             let mut code: Vec<u8> = vec![
-                0x8B, 0x07, 0x85, 0xC0, 0x74, 0x0A, 0xC7, 0x47, 0x0C, 0x01, 0x00, 0x00, 0x00,
-                0x31, 0xC0, 0xC3, 0x8B, 0x47, 0x04, 0x25,
+                0x8B, 0x07, 0x85, 0xC0, 0x74, 0x0A, 0xC7, 0x47, 0x0C, 0x01, 0x00, 0x00, 0x00, 0x31,
+                0xC0, 0xC3, 0x8B, 0x47, 0x04, 0x25,
             ];
             code.extend_from_slice(&req);
             code.push(0x3D);
             code.extend_from_slice(&req);
             code.extend_from_slice(&[
-                0x74, 0x0C, 0xC7, 0x47, 0x0C, 0xFF, 0xFF, 0xFF, 0xFF, 0xB8, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xC3, 0xC7, 0x47, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x8B, 0x47, 0x08, 0xC3,
+                0x74, 0x0C, 0xC7, 0x47, 0x0C, 0xFF, 0xFF, 0xFF, 0xFF, 0xB8, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xC3, 0xC7, 0x47, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x8B, 0x47, 0x08, 0xC3,
             ]);
             return Self::from_machine_code(&code);
         }

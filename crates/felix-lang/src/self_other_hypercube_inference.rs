@@ -140,8 +140,18 @@ impl SelfOtherHypercubeEngine {
         if n < 2.0 {
             return 0.0;
         }
-        let mean_s = self.collected_buffer.iter().map(|o| o.self_signal).sum::<f64>() / n;
-        let mean_o = self.collected_buffer.iter().map(|o| o.other_signal).sum::<f64>() / n;
+        let mean_s = self
+            .collected_buffer
+            .iter()
+            .map(|o| o.self_signal)
+            .sum::<f64>()
+            / n;
+        let mean_o = self
+            .collected_buffer
+            .iter()
+            .map(|o| o.other_signal)
+            .sum::<f64>()
+            / n;
 
         let mut num = 0.0;
         let mut den_s = 0.0;
@@ -174,8 +184,16 @@ impl SelfOtherHypercubeEngine {
                 obs_cnt += 1;
             }
         }
-        let e_do = if do_cnt > 0 { do_sum / (do_cnt as f64) } else { 0.0 };
-        let e_obs = if obs_cnt > 0 { obs_sum / (obs_cnt as f64) } else { 0.0 };
+        let e_do = if do_cnt > 0 {
+            do_sum / (do_cnt as f64)
+        } else {
+            0.0
+        };
+        let e_obs = if obs_cnt > 0 {
+            obs_sum / (obs_cnt as f64)
+        } else {
+            0.0
+        };
         e_do - e_obs
     }
 

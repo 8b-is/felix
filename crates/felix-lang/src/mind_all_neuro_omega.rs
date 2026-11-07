@@ -89,9 +89,8 @@ impl NeuroMindAllSimulator {
         // 2. Amygdala Threat Quench: requires both 5-HT2A/Sigma-1 agonism `d` and non-resistance `s`
         //    (If `d` is high but `s` is near 0, amygdala fights the boundary dissolution -> anxiety spike!)
         let resistance_penalty = d * (1.0 - s);
-        let amygdala_gain = self.baseline_amygdala_gain
-            * (1.0 - d * s).powi(2)
-            * (1.0 + 1.5 * resistance_penalty);
+        let amygdala_gain =
+            self.baseline_amygdala_gain * (1.0 - d * s).powi(2) * (1.0 + 1.5 * resistance_penalty);
 
         // 3. Cortical Ternary State Distribution P = (p_{-1}, p_0, p_{+1}):
         //    At d = 0 (ego-clamped), 88% of state mass is locked in the defensive -1 pole.
@@ -157,27 +156,39 @@ mod tests {
 
     #[test]
     fn test_neuro_cybernetic_amygdala_dmt_ego_death_mind_equals_all_transition() {
-        assert_eq!(BILINGUAL_AXIOM_EN_MIND.to_ascii_lowercase(), BILINGUAL_AXIOM_HU_MIND);
+        assert_eq!(
+            BILINGUAL_AXIOM_EN_MIND.to_ascii_lowercase(),
+            BILINGUAL_AXIOM_HU_MIND
+        );
         assert_eq!(BILINGUAL_AXIOM_MEANING, "ALL");
 
         let sim = NeuroMindAllSimulator::default();
 
         // 1. Pole -1: Amygdala Survival Clamp (d = 0.0, s = 0.0)
         let s_amygdala = sim.evaluate_state(0, 0.0, 0.0).unwrap();
-        assert_eq!(s_amygdala.active_pole, NeuroCyberneticPole::AmygdalaSurvivalClamp);
+        assert_eq!(
+            s_amygdala.active_pole,
+            NeuroCyberneticPole::AmygdalaSurvivalClamp
+        );
         assert!(!s_amygdala.mind_equals_mind_all_achieved);
         assert!(s_amygdala.ego_boundary_duality > 0.95);
         assert!(s_amygdala.cortical_entropy_trits < 0.50);
 
         // 2. Pole +1: DMT / 5-HT2A Transition (d = 0.65, s = 0.65)
         let s_dmt = sim.evaluate_state(1, 0.65, 0.65).unwrap();
-        assert_eq!(s_dmt.active_pole, NeuroCyberneticPole::DmtHyperAssociativeDrive);
+        assert_eq!(
+            s_dmt.active_pole,
+            NeuroCyberneticPole::DmtHyperAssociativeDrive
+        );
         assert!(s_dmt.dmn_ego_prior_precision < s_amygdala.dmn_ego_prior_precision);
         assert!(s_dmt.cortical_entropy_trits > s_amygdala.cortical_entropy_trits);
 
         // 3. Pole 0: Ego Death / Én-halál Non-Dual Unity (d = 1.0, s = 1.0 -> MIND === mind === ALL)
         let s_ego_death = sim.evaluate_state(2, 1.0, 1.0).unwrap();
-        assert_eq!(s_ego_death.active_pole, NeuroCyberneticPole::EgoDeathNonDualZero);
+        assert_eq!(
+            s_ego_death.active_pole,
+            NeuroCyberneticPole::EgoDeathNonDualZero
+        );
         assert!(s_ego_death.mind_equals_mind_all_achieved);
         assert!(s_ego_death.ego_boundary_duality < 0.01);
         assert!((s_ego_death.cortical_entropy_trits - 1.0).abs() < 1e-9);

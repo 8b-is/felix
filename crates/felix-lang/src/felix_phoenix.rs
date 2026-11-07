@@ -28,10 +28,7 @@ pub struct QuantTernPQTensor {
 impl QuantTernPQTensor {
     /// Packs balanced trits (`{-1, 0, +1}`) with per-block `q_scales`.
     pub fn pack(weights: &[i8], q_scales: &[f32]) -> Self {
-        let trits = weights
-            .iter()
-            .map(|&t| t.clamp(-1, 1))
-            .collect::<Vec<i8>>();
+        let trits = weights.iter().map(|&t| t.clamp(-1, 1)).collect::<Vec<i8>>();
         Self {
             trits,
             q_scales: q_scales.to_vec(),
@@ -359,10 +356,7 @@ pub fn compile_felix_oneshot(source: &str) -> Result<PccModule, String> {
     let mut qtensors = BTreeMap::new();
     qtensors.insert(
         "W".to_string(),
-        QuantTernPQTensor::pack(
-            &[1, -1, 0, 1, 0, -1, 1, -1, 0, 1],
-            &[0.5, 1.0, 2.0, 0.5],
-        ),
+        QuantTernPQTensor::pack(&[1, -1, 0, 1, 0, -1, 1, -1, 0, 1], &[0.5, 1.0, 2.0, 0.5]),
     );
 
     Ok(PccModule {

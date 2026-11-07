@@ -44,8 +44,14 @@ fn test_galaxia_m8_crdt_semilattice_laws_and_byzantine_pcc_quarantine() {
     // 2A. Idempotence: A \sqcup A == A
     let join_aa = state_a.join(&state_a);
     assert_eq!(
-        join_aa.synthesize_consensus_m8().unwrap().container_pcc_seal_u64,
-        state_a.synthesize_consensus_m8().unwrap().container_pcc_seal_u64
+        join_aa
+            .synthesize_consensus_m8()
+            .unwrap()
+            .container_pcc_seal_u64,
+        state_a
+            .synthesize_consensus_m8()
+            .unwrap()
+            .container_pcc_seal_u64
     );
 
     // 2B. Commutativity: A \sqcup B == B \sqcup A
@@ -114,8 +120,7 @@ fn test_galaxia_m8_crdt_semilattice_laws_and_byzantine_pcc_quarantine() {
         );
     }
     wave_poison_m8.container_pcc_seal_u64 = wave_poison_m8.compute_pcc_seal();
-    let poison_env =
-        M8GossipEnvelope::pack_from_container(GalaxiaPeerId(88), 5, &wave_poison_m8);
+    let poison_env = M8GossipEnvelope::pack_from_container(GalaxiaPeerId(88), 5, &wave_poison_m8);
     assert!(matches!(
         node_a.receive_and_merge_gossip(&poison_env),
         Err(ByzantineRejectionReason::DestructiveWaveInterferencePoisoning { .. })

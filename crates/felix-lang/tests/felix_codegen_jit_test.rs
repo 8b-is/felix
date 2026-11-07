@@ -7,9 +7,7 @@ fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
             emit_aarch64_neon_module, emit_x86_64_avx512_module, encode_x86_64_evex_vpternlogd,
             JitExecutablePage, JitRuntimeBridge, JitTargetIsa,
         },
-        felix_phoenix::{
-            compile_felix_oneshot, QuantTernPQTensor, CAP_ARENA, CAP_IO, CAP_NET,
-        },
+        felix_phoenix::{compile_felix_oneshot, QuantTernPQTensor, CAP_ARENA, CAP_IO, CAP_NET},
     };
 
     // 1. Verify exact 7-byte AVX-512 EVEX `vpternlogd zmm0, zmm1, zmm2, 0xFC` encoding
@@ -60,9 +58,7 @@ fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
     // Verify sorted symbol emission order: "pass2" must be emitted before "synthesize"
     let sym_keys: Vec<&String> = x86_art_1.symbols.keys().collect();
     assert_eq!(sym_keys, vec!["pass2", "synthesize"]);
-    assert!(
-        x86_art_1.symbols["pass2"].byte_offset < x86_art_1.symbols["synthesize"].byte_offset
-    );
+    assert!(x86_art_1.symbols["pass2"].byte_offset < x86_art_1.symbols["synthesize"].byte_offset);
     assert_eq!(x86_art_1.symbols["synthesize"].safe_point_offsets.len(), 1);
 
     // Verify ARM64 NEON emission
@@ -77,10 +73,8 @@ fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
     assert!(jit_page.code_len() > 0);
 
     let acts: Vec<i16> = vec![10, -20, 30, 40, -50, 60, 70, -80, 90, 100];
-    let qtensor = QuantTernPQTensor::pack(
-        &[1, -1, 0, 1, 0, -1, 1, -1, 0, 1],
-        &[0.5, 1.0, 2.0, 0.5],
-    );
+    let qtensor =
+        QuantTernPQTensor::pack(&[1, -1, 0, 1, 0, -1, 1, -1, 0, 1], &[0.5, 1.0, 2.0, 0.5]);
 
     // 3A. Normal native execution with granted capabilities (CAP_IO | CAP_ARENA) -> returns 260
     let mut bridge = JitRuntimeBridge {

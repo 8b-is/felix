@@ -15,13 +15,13 @@ fn test_agp_isa_64bit_bytecode_packetizer_and_streaming_execution() {
     let insn = AgpInstruction::encode(
         AGP_OP_TGEMM_PQ,
         AGP_FLAG_TERMINAL,
-        true,  // rok_invert
-        true,  // bend_enable
-        12,    // dst
-        5,     // src1
-        7,     // src2
-        0x5A5A,// imm20
-        0x1234,// cap_token
+        true,   // rok_invert
+        true,   // bend_enable
+        12,     // dst
+        5,      // src1
+        7,      // src2
+        0x5A5A, // imm20
+        0x1234, // cap_token
     );
 
     assert_eq!(insn.opcode(), AGP_OP_TGEMM_PQ);
@@ -41,9 +41,29 @@ fn test_agp_isa_64bit_bytecode_packetizer_and_streaming_execution() {
         cap_mask: CAP_IO | CAP_ARENA,
         dependencies: vec![],
         instructions: vec![
-            AgpInstruction::encode(AGP_OP_CAP_ASSERT, AGP_FLAG_STANDARD, false, false, 0, 0, 0, 0, (CAP_IO | CAP_ARENA) as u16),
+            AgpInstruction::encode(
+                AGP_OP_CAP_ASSERT,
+                AGP_FLAG_STANDARD,
+                false,
+                false,
+                0,
+                0,
+                0,
+                0,
+                (CAP_IO | CAP_ARENA) as u16,
+            ),
             // Load 64 weight rows
-            AgpInstruction::encode(AGP_OP_LD_WEIGHT, AGP_FLAG_STANDARD, false, true, 0, 1, 2, 0, 0),
+            AgpInstruction::encode(
+                AGP_OP_LD_WEIGHT,
+                AGP_FLAG_STANDARD,
+                false,
+                true,
+                0,
+                1,
+                2,
+                0,
+                0,
+            ),
         ],
     };
 
@@ -53,8 +73,28 @@ fn test_agp_isa_64bit_bytecode_packetizer_and_streaming_execution() {
         cap_mask: CAP_ARENA | CAP_M8,
         dependencies: vec![0],
         instructions: vec![
-            AgpInstruction::encode(AGP_OP_SYNC_BARRIER, AGP_FLAG_STANDARD, false, false, 0, 0, 0, 1, 0), // Depends on node 0
-            AgpInstruction::encode(AGP_OP_TGEMM_RAW, AGP_FLAG_TERMINAL, false, false, 0, 0, 0, 0, 0),
+            AgpInstruction::encode(
+                AGP_OP_SYNC_BARRIER,
+                AGP_FLAG_STANDARD,
+                false,
+                false,
+                0,
+                0,
+                0,
+                1,
+                0,
+            ), // Depends on node 0
+            AgpInstruction::encode(
+                AGP_OP_TGEMM_RAW,
+                AGP_FLAG_TERMINAL,
+                false,
+                false,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ),
         ],
     };
 
@@ -97,9 +137,17 @@ fn test_agp_isa_64bit_bytecode_packetizer_and_streaming_execution() {
         name: "node2_rogue_root_seal".into(),
         cap_mask: CAP_ROOT_SEAL,
         dependencies: vec![],
-        instructions: vec![
-            AgpInstruction::encode(AGP_OP_TGEMM_RAW, AGP_FLAG_TERMINAL, false, false, 0, 0, 0, 0, 0),
-        ],
+        instructions: vec![AgpInstruction::encode(
+            AGP_OP_TGEMM_RAW,
+            AGP_FLAG_TERMINAL,
+            false,
+            false,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )],
     };
 
     let rogue_graph = AgpCapabilityGraph {
@@ -108,6 +156,10 @@ fn test_agp_isa_64bit_bytecode_packetizer_and_streaming_execution() {
     };
 
     let mut rogue_packetizer = AgpStreamPacketizer::new(rogue_graph, granted | CAP_ROOT_SEAL);
-    let err = rogue_packetizer.packetize_node(2, &Some(weights), &Some(acts), &Some(futhark_sample));
-    assert!(err.is_err(), "Packetizer must reject nodes specifying CAP_ROOT_SEAL");
+    let err =
+        rogue_packetizer.packetize_node(2, &Some(weights), &Some(acts), &Some(futhark_sample));
+    assert!(
+        err.is_err(),
+        "Packetizer must reject nodes specifying CAP_ROOT_SEAL"
+    );
 }

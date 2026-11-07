@@ -351,9 +351,8 @@ impl Machine {
                         n as u64,
                         t as i8,
                     );
-                let num_i64 = i64::try_from(surplus_num).map_err(|_| {
-                    Diagnostic::error(span, "god_of_sun surplus overflows i64/i64")
-                })?;
+                let num_i64 = i64::try_from(surplus_num)
+                    .map_err(|_| Diagnostic::error(span, "god_of_sun surplus overflows i64/i64"))?;
                 let ratio = Ratio::new(num_i64, pq.denom()).ok_or_else(|| {
                     Diagnostic::error(span, "god_of_sun ratio denominator is zero")
                 })?;

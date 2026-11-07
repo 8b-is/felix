@@ -73,7 +73,9 @@ fn test_systemverilog_64x64_ternary_axis_tgemm_rok_futhark27_and_i16_min() {
 
     // Verify pure i16::MIN (-32768) row-0 saturation freedom: 64 * (-1) * (-32768) = +2,097,152
     let all_min_acts = [i16::MIN; 64];
-    let (min_dots, _) = fpga.execute_tgemm_64x64_stream(&all_min_acts, false).unwrap();
+    let (min_dots, _) = fpga
+        .execute_tgemm_64x64_stream(&all_min_acts, false)
+        .unwrap();
     assert_eq!(min_dots[0], 64 * 32_768); // +2,097,152
 
     // 3. Verify Hardware Rök 3^3 = 27 Futhark Cube Single-Cycle Decoding (`AXIS_CMD_DECODE_FUTHARK27`)
@@ -95,8 +97,9 @@ fn test_systemverilog_64x64_ternary_axis_tgemm_rok_futhark27_and_i16_min() {
     };
     futhark_beat.tdata[0..16].copy_from_slice(&cipher_futhark_16);
     futhark_beat.tdata[14] = 0x80 | 0x40; // rok_enable = 1, rok_invert_aett = 1, bend_k = 0
-    futhark_beat.tdata[15] =
-        (rok_key.shift_stave_k0 & 3) | ((rok_key.shift_row_k1 & 3) << 2) | ((rok_key.shift_aett_k2 & 3) << 4);
+    futhark_beat.tdata[15] = (rok_key.shift_stave_k0 & 3)
+        | ((rok_key.shift_row_k1 & 3) << 2)
+        | ((rok_key.shift_aett_k2 & 3) << 4);
 
     let mut futhark_reply = fpga.send_single_beat(&futhark_beat).unwrap();
     // For lanes 14 and 15 in this beat, decrypt using cipher bytes directly as in hardware control path

@@ -199,12 +199,7 @@ pub mod futhark_cipher_simd {
 
     /// Applies the bijective Rök Stone `3^3 = 27` Futhark Cube + `3^2 = 9` header permutation
     /// over a base-243 pentad row (`encrypt == true` for forward, `false` for inverse).
-    pub fn rok_cipher_5trit_row_simd(
-        src: &[u8],
-        key: RokCipherKey,
-        encrypt: bool,
-        dst: &mut [u8],
-    ) {
+    pub fn rok_cipher_5trit_row_simd(src: &[u8], key: RokCipherKey, encrypt: bool, dst: &mut [u8]) {
         assert_eq!(src.len(), dst.len());
         let k0 = key.shift_stave_k0 % 3;
         let k1 = key.shift_row_k1 % 3;

@@ -57,7 +57,11 @@ fn test_ternary_omni_information_theory_of_all_unification() {
         "Position-dependent (k*i) mod 3 bend must whiten marginal distribution to ~1.0 trit, got {}",
         omni.isentropic_whitening_proof.bent_marginal_entropy_trits
     );
-    assert!(omni.isentropic_whitening_proof.conditional_erasure_entropy_trits < 1e-12);
+    assert!(
+        omni.isentropic_whitening_proof
+            .conditional_erasure_entropy_trits
+            < 1e-12
+    );
     assert_eq!(omni.isentropic_whitening_proof.roundtrip_disagreed_trits, 0);
 
     // Verify Cybernetic Jury Stability & Priority DAG compression

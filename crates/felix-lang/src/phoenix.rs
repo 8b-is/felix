@@ -520,9 +520,9 @@ impl PhoenixSymbioticVm {
                     }
                 }
                 NandSsaOp::Nand { dst, lhs, rhs } => {
-                    self.registers[(dst & 0x0F) as usize] =
-                        !(self.registers[(lhs & 0x0F) as usize]
-                            & self.registers[(rhs & 0x0F) as usize]);
+                    self.registers[(dst & 0x0F) as usize] = !(self.registers
+                        [(lhs & 0x0F) as usize]
+                        & self.registers[(rhs & 0x0F) as usize]);
                 }
                 NandSsaOp::Ld { dst, arena_offset } => {
                     self.registers[(dst & 0x0F) as usize] = self.arena[arena_offset as usize];
@@ -653,8 +653,9 @@ pub fn verify_ada_spark_arc(ada_dir: &std::path::Path) -> Result<SparkArcAudit, 
             if content.contains("No_Heap_Allocations") {
                 no_heap_restrictions_count += 1;
             }
-            pre_post_contracts_count +=
-                content.matches("Pre ").count() + content.matches("Post =>").count() + content.matches("Post ").count();
+            pre_post_contracts_count += content.matches("Pre ").count()
+                + content.matches("Post =>").count()
+                + content.matches("Post ").count();
             total_bytes += content.len();
             concat.extend_from_slice(format!("--- {pkg}.{ext} ---\n").as_bytes());
             concat.extend_from_slice(content.as_bytes());

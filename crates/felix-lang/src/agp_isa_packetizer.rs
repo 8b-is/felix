@@ -63,7 +63,17 @@ impl AgpInstruction {
         let imm_part = ((imm20 as u64) & 0x000F_FFFF) << 16;
         let cap_part = (cap_token as u64) & 0xFFFF;
 
-        Self(op_part | fl_part | ro_part | en_part | dst_part | s1_part | s2_part | imm_part | cap_part)
+        Self(
+            op_part
+                | fl_part
+                | ro_part
+                | en_part
+                | dst_part
+                | s1_part
+                | s2_part
+                | imm_part
+                | cap_part,
+        )
     }
 
     #[inline(always)]
@@ -212,7 +222,9 @@ impl AgpStreamPacketizer {
                 }
 
                 AGP_OP_LD_WEIGHT => {
-                    let weights = weights_data.as_ref().ok_or("Weight payload missing for LD_WEIGHT")?;
+                    let weights = weights_data
+                        .as_ref()
+                        .ok_or("Weight payload missing for LD_WEIGHT")?;
                     let key = RokCipherKey {
                         shift_stave_k0: insn.src1() % 3,
                         shift_row_k1: insn.src2() % 3,
@@ -235,7 +247,9 @@ impl AgpStreamPacketizer {
                 }
 
                 AGP_OP_LD_ACT_LO => {
-                    let acts = acts_data.as_ref().ok_or("Activation payload missing for LD_ACT_LO")?;
+                    let acts = acts_data
+                        .as_ref()
+                        .ok_or("Activation payload missing for LD_ACT_LO")?;
                     let mut tdata = [0u8; 64];
                     for c in 0..32 {
                         tdata[c * 2..c * 2 + 2].copy_from_slice(&acts[c].to_le_bytes());
@@ -248,7 +262,9 @@ impl AgpStreamPacketizer {
                 }
 
                 AGP_OP_LD_ACT_HI => {
-                    let acts = acts_data.as_ref().ok_or("Activation payload missing for LD_ACT_HI")?;
+                    let acts = acts_data
+                        .as_ref()
+                        .ok_or("Activation payload missing for LD_ACT_HI")?;
                     let mut tdata = [0u8; 64];
                     for c in 0..32 {
                         tdata[c * 2..c * 2 + 2].copy_from_slice(&acts[c + 32].to_le_bytes());
@@ -261,7 +277,9 @@ impl AgpStreamPacketizer {
                 }
 
                 AGP_OP_TGEMM_RAW => {
-                    let acts = acts_data.as_ref().ok_or("Activation payload missing for TGEMM_RAW")?;
+                    let acts = acts_data
+                        .as_ref()
+                        .ok_or("Activation payload missing for TGEMM_RAW")?;
                     // Stream Beat 0 (Cols 0..31)
                     let mut tdata_lo = [0u8; 64];
                     for c in 0..32 {
@@ -286,7 +304,9 @@ impl AgpStreamPacketizer {
                 }
 
                 AGP_OP_TGEMM_PQ => {
-                    let acts = acts_data.as_ref().ok_or("Activation payload missing for TGEMM_PQ")?;
+                    let acts = acts_data
+                        .as_ref()
+                        .ok_or("Activation payload missing for TGEMM_PQ")?;
                     let mut tdata_lo = [0u8; 64];
                     for c in 0..32 {
                         tdata_lo[c * 2..c * 2 + 2].copy_from_slice(&acts[c].to_le_bytes());
@@ -309,7 +329,9 @@ impl AgpStreamPacketizer {
                 }
 
                 AGP_OP_FUTHARK_DEC => {
-                    let bytes = raw_futhark_bytes.as_ref().ok_or("Payload missing for FUTHARK_DEC")?;
+                    let bytes = raw_futhark_bytes
+                        .as_ref()
+                        .ok_or("Payload missing for FUTHARK_DEC")?;
                     let mut beat = AxisBeat512 {
                         tdata: *bytes,
                         tuser: AXIS_CMD_DECODE_FUTHARK27 as u16,

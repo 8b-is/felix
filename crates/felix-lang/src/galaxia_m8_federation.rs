@@ -29,12 +29,27 @@ pub struct GalaxiaPeerId(pub u32);
 #[serde(rename_all = "snake_case")]
 pub enum ByzantineRejectionReason {
     InvalidMagicOrMalformedWire(String),
-    PccSealMismatch { expected: u64, received: u64 },
-    Charm18RootSealLeak { offending_effects: CapEffectMask },
-    UnstableJurySpectralRadius { radius_micro: u32 },
-    CodegenDigestMismatch { expected_x86: u64, received_x86: u64 },
-    DestructiveWaveInterferencePoisoning { coherence_inner_product: i64 },
-    StaleOrDuplicateEpoch { peer_epoch: u64, known_epoch: u64 },
+    PccSealMismatch {
+        expected: u64,
+        received: u64,
+    },
+    Charm18RootSealLeak {
+        offending_effects: CapEffectMask,
+    },
+    UnstableJurySpectralRadius {
+        radius_micro: u32,
+    },
+    CodegenDigestMismatch {
+        expected_x86: u64,
+        received_x86: u64,
+    },
+    DestructiveWaveInterferencePoisoning {
+        coherence_inner_product: i64,
+    },
+    StaleOrDuplicateEpoch {
+        peer_epoch: u64,
+        known_epoch: u64,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -159,10 +174,9 @@ impl GalaxiaM8CrdtState {
         };
 
         // Fast-path for single-peer or identical-container frontier (preserves exact idempotence)
-        let all_identical = self
-            .frontier
-            .values()
-            .all(|e| e.container.container_pcc_seal_u64 == first_entry.container.container_pcc_seal_u64);
+        let all_identical = self.frontier.values().all(|e| {
+            e.container.container_pcc_seal_u64 == first_entry.container.container_pcc_seal_u64
+        });
         if all_identical {
             return Ok(first_entry.container.clone());
         }
@@ -396,16 +410,15 @@ impl GalaxiaM8PeerNode {
             }
         }
 
-        let verified_container = match M8PersonaContainer::from_m8_bytes_verified(
-            &envelope.raw_m8_bytes,
-        ) {
-            Ok(c) => c,
-            Err(msg) => {
-                let reason = ByzantineRejectionReason::InvalidMagicOrMalformedWire(msg);
-                self.record_rejection(envelope, reason.clone());
-                return Err(reason);
-            }
-        };
+        let verified_container =
+            match M8PersonaContainer::from_m8_bytes_verified(&envelope.raw_m8_bytes) {
+                Ok(c) => c,
+                Err(msg) => {
+                    let reason = ByzantineRejectionReason::InvalidMagicOrMalformedWire(msg);
+                    self.record_rejection(envelope, reason.clone());
+                    return Err(reason);
+                }
+            };
 
         // Gate 4B: Cross-ISA FELIX-CODEGEN Reproducibility Digest Pinning
         if verified_container.felix_x86_64_code_digest != self.expected_x86_64_digest
@@ -471,11 +484,7 @@ impl GalaxiaM8PeerNode {
         Ok(self.active_container.container_pcc_seal_u64)
     }
 
-    fn record_rejection(
-        &mut self,
-        envelope: &M8GossipEnvelope,
-        reason: ByzantineRejectionReason,
-    ) {
+    fn record_rejection(&mut self, envelope: &M8GossipEnvelope, reason: ByzantineRejectionReason) {
         if !self.quarantined_peers.contains(&envelope.origin_peer) {
             self.quarantined_peers.push(envelope.origin_peer);
         }
