@@ -39,10 +39,17 @@ pub mod felix_phoenix;
 pub mod graph;
 
 pub mod lexer;
+pub mod omni_subsystems;
+pub mod omni_ternary_info;
 pub mod parser;
 pub mod phoenix;
 pub mod ratio;
 pub mod typeck;
+
+pub use omni_subsystems::{
+    ada_bridge, dag_scheduler, ernie55_backbone, futhark_cipher_simd, latent_moe_simd, model_cache,
+    odin_heiti_philology, odin_hlidskjalf, ternary_deck, ultra_zeno,
+};
 
 pub use ast::{Expr, Program, Stmt};
 pub use check::{Checked, Type};
