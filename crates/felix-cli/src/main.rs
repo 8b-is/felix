@@ -70,6 +70,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["omni"] | ["--omni"] => cmd_omni(),
         ["mind"] | ["--mind"] | ["--mind-all"] | ["well"] | ["--well"] => cmd_mind_well(),
         ["erdos"] | ["--erdos"] | ["pqt"] | ["--pqt"] => cmd_erdos(),
+        ["inference"] | ["--inference"] | ["hypercube"] | ["--hypercube"] => cmd_inference(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -94,6 +95,8 @@ fn is_command(word: &str) -> bool {
             | "well"
             | "erdos"
             | "pqt"
+            | "inference"
+            | "hypercube"
     )
 }
 
@@ -375,6 +378,39 @@ fn cmd_erdos() -> Result<(), Fail> {
         cert.max_wave_continuity_step,
         cert.ramsey_r33_coherence_verified,
         cert.the_book_q_e_d
+    );
+    Ok(())
+}
+
+fn cmd_inference() -> Result<(), Fail> {
+    use felix_lang::self_other_hypercube_inference::{
+        SelfOtherHypercubeEngine, SocialWaveObservation,
+    };
+    let mut engine = SelfOtherHypercubeEngine::new();
+    for &(ts, s, o, do_act) in &[
+        (100, -0.8, -0.75, false),
+        (200, -0.4, -0.38, false),
+        (300, 0.0, 0.02, false),
+        (400, 0.45, 0.42, true),
+        (500, 0.85, 0.82, true),
+        (600, 0.95, 0.92, true),
+    ] {
+        engine.task1_collect(SocialWaveObservation {
+            timestamp_us: ts,
+            self_signal: s,
+            other_signal: o,
+            intervention_do_active: do_act,
+        });
+    }
+    let cert = engine.task6_test_hypotheses(0.2);
+    println!(
+        "  • 6-Step Q₆ Inference   : N={}, coherence={:.4}, r={:.4}, do_effect={:.4}, F={:.4} (verified={} ✓)",
+        cert.collected_count,
+        cert.recalled_coherence_mean,
+        cert.covariation_r,
+        cert.causal_do_effect,
+        cert.hypothesis_free_energy_f,
+        cert.self_other_isomorphism_verified
     );
     Ok(())
 }

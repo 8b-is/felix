@@ -56,6 +56,7 @@ pub mod parser;
 pub mod phoenix;
 pub mod phoenix_cap_abi;
 pub mod ratio;
+pub mod self_other_hypercube_inference;
 pub mod typeck;
 pub mod well_signal_resolution;
 pub mod well_signal_spqt_espnow;
