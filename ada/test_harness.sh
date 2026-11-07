@@ -65,12 +65,18 @@ run_test "linear_consume" \
     "ok" \
     0
 
-# Test 3: Ternary NAND truth table
+# Test 4: Ternary NAND truth table
 run_test "ternary_nand" \
     'print(-min(1, 1)); print(-min(1, 0)); print(-min(0, -1));' \
     "-1
 0
 1" \
+    0
+
+# Test 5: ULTRA-ZENO GOD OF SUN (P/Q - n*t > P)
+run_test "god_of_sun" \
+    'print(god_of_sun(31/32, 31, -1));' \
+    "31/32" \
     0
 
 echo

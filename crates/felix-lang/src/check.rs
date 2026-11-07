@@ -146,6 +146,11 @@ pub const BUILTINS: &[Builtin] = &[
         params: &[Param::Samples],
         returns: Type::Word,
     },
+    Builtin {
+        name: "god_of_sun",
+        params: &[Param::Scale, Param::Int, Param::Int],
+        returns: Type::Ratio,
+    },
 ];
 
 pub fn builtin(name: &str) -> Option<&'static Builtin> {

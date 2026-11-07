@@ -1,0 +1,26 @@
+felix-capsule/1
+id: a29596caa51965b810c00188ad90a7bf
+source-sha256: 32edd06a118fc2d707d466c58a35f2dc602956ee540ad069d980bc8faec7df50
+output-sha256: c7885a53b0e5826af7ff81193b52f54fc7cd0e327c30984235aba4ce0fb31ecb
+source-bytes: 622
+output-bytes: 18
+--- source
+// Felix v1.0 — ULTRA-ZENO GOD OF SUN: P/Q - n*t > P
+//
+// Evaluates the exact zero-float Solar Surplus:
+//   god_of_sun(P/Q, n, t) = (P/Q - n*t) - P = (P*(1 - Q) - Q*n*t) / Q
+// Under the Mahākāla Hearth gate (t = -1), once step n reaches the Solar
+// Horizon n_sun = floor(P*(Q - 1)/Q) + 1, the surplus is strictly positive.
+
+let qat_horizon = god_of_sun(31/32, 31, -1);   // 1023/32 - 31 = +31/32 > 0
+let zen_horizon = god_of_sun(39/40, 39, -1);   // 1599/40 - 39 = +39/40 > 0
+let sub_horizon = god_of_sun(31/32, 30, -1);   //  991/32 - 31 =  -1/32 <= 0
+
+print(qat_horizon);
+print(zen_horizon);
+print(sub_horizon);
+
+--- output
+31/32
+39/40
+-1/32

@@ -1,7 +1,7 @@
 error at 4:7: `<~>` contracts two Words; found Word and Int
      4 | print(w <~> 3);
        |       ^
-error at 5:7: unknown function `pakc`; the builtins are pack, fib, bt, new_vault, re, im, genesis_seal, aurora_seal, paprika_root, toss_freedom, spherepop_fold
+error at 5:7: unknown function `pakc`; the builtins are pack, fib, bt, new_vault, re, im, genesis_seal, aurora_seal, paprika_root, toss_freedom, spherepop_fold, god_of_sun
      5 | print(pakc([1], 1));
        |       ^
 error at 6:7: `ghost` is not bound

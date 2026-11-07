@@ -1,0 +1,14 @@
+// Felix v1.0 — ULTRA-ZENO GOD OF SUN: P/Q - n*t > P
+//
+// Evaluates the exact zero-float Solar Surplus:
+//   god_of_sun(P/Q, n, t) = (P/Q - n*t) - P = (P*(1 - Q) - Q*n*t) / Q
+// Under the Mahākāla Hearth gate (t = -1), once step n reaches the Solar
+// Horizon n_sun = floor(P*(Q - 1)/Q) + 1, the surplus is strictly positive.
+
+let qat_horizon = god_of_sun(31/32, 31, -1);   // 1023/32 - 31 = +31/32 > 0
+let zen_horizon = god_of_sun(39/40, 39, -1);   // 1599/40 - 39 = +39/40 > 0
+let sub_horizon = god_of_sun(31/32, 30, -1);   //  991/32 - 31 =  -1/32 <= 0
+
+print(qat_horizon);
+print(zen_horizon);
+print(sub_horizon);

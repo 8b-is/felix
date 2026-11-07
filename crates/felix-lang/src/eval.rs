@@ -327,6 +327,39 @@ impl Machine {
                 })
             }
 
+            // god_of_sun(pq, n, t) — exact ULTRA-ZENO GOD OF SUN surplus `(P/Q - n*t) - P`.
+            // Positive return value witnesses `P/Q - n*t > P`.
+            ("god_of_sun", [pq_expr, n_expr, t_expr]) => {
+                let pq = match self.eval(pq_expr)? {
+                    Value::Int(v) => Ratio::int(v),
+                    Value::Ratio(r) => r,
+                    _ => return Err(internal(pq_expr.span(), "a non-scale argument")),
+                };
+                let n = self.int(n_expr)?;
+                if n < 0 {
+                    return Err(Diagnostic::error(
+                        n_expr.span(),
+                        format!("god_of_sun step count n must be >= 0, found {n}"),
+                    ));
+                }
+                let t_raw = self.int(t_expr)?;
+                let t = t_raw.clamp(-1, 1);
+                let (_holds, surplus_num, _n_sun) =
+                    crate::phoenix::felix_zeno_god_of_sun_pq_nt_gt_p(
+                        pq.numer(),
+                        pq.denom() as u64,
+                        n as u64,
+                        t as i8,
+                    );
+                let num_i64 = i64::try_from(surplus_num).map_err(|_| {
+                    Diagnostic::error(span, "god_of_sun surplus overflows i64/i64")
+                })?;
+                let ratio = Ratio::new(num_i64, pq.denom()).ok_or_else(|| {
+                    Diagnostic::error(span, "god_of_sun ratio denominator is zero")
+                })?;
+                Ok(Value::Ratio(ratio))
+            }
+
             _ => Err(internal(span, "an unknown builtin or a wrong arity")),
         }
     }

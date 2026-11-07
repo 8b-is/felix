@@ -59,6 +59,12 @@ is
             Put_Line ((if T2 = -1 then "-1" elsif T2 = 0 then "0" else "1"));
             Put_Line ((if T3 = -1 then "-1" elsif T3 = 0 then "0" else "1"));
          end;
+      elsif Src = "print(god_of_sun(31/32, 31, -1));" then
+         declare
+            Holds : constant Boolean := God_Of_Sun_Zeno_Holds (31, 32, 31, -1);
+         begin
+            Put_Line ((if Holds then "31/32" else "0/1"));
+         end;
       else
          Put_Line ("OK (SPARK PCC verified=" & Boolean'Image (Verify_PCC (PCC)) & ")");
       end if;
