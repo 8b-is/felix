@@ -1,11 +1,15 @@
+use felix_lang as mcp_combinatorics_llm;
+
 #[test]
 fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
-    use felix_lang::felix_codegen_jit::{
-        emit_aarch64_neon_module, emit_x86_64_avx512_module, encode_x86_64_evex_vpternlogd,
-        JitExecutablePage, JitRuntimeBridge, JitTargetIsa,
-    };
-    use felix_lang::phoenix::{
-        FelixPhoenixModule, NandSsaOp, CAP_ARENA, CAP_IO,
+    use mcp_combinatorics_llm::{
+        felix_codegen_jit::{
+            emit_aarch64_neon_module, emit_x86_64_avx512_module, encode_x86_64_evex_vpternlogd,
+            JitExecutablePage, JitRuntimeBridge, JitTargetIsa,
+        },
+        felix_phoenix::{
+            compile_felix_oneshot, QuantTernPQTensor, CAP_ARENA, CAP_IO, CAP_NET,
+        },
     };
 
     // 1. Verify exact 7-byte AVX-512 EVEX `vpternlogd zmm0, zmm1, zmm2, 0xFC` encoding
@@ -17,23 +21,31 @@ fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
     assert_eq!(evex_and[4], 0x25); // VPTERNLOGD opcode
     assert_eq!(evex_and[6], 0xC0); // imm8 = A & B
 
-    // 2. Build canonical module
-    let ops = vec![
-        NandSsaOp::Yield { safe_point_id: 1 },
-        NandSsaOp::Nand { dst: 0, lhs: 1, rhs: 2 },
-        NandSsaOp::TGemm { dst: 0, len: 10 },
-        NandSsaOp::Cap { dst: 0, cap_flag: CAP_IO, arg_reg: 0 },
-        NandSsaOp::Ret { src: 0 },
-    ];
-    let pcc_mod = FelixPhoenixModule::compile_verified(
-        "mem8.recall::synthesize",
-        1,
-        ops,
-        CAP_ARENA | CAP_IO,
-        64,
-        "requires acts.len() == 10",
-        true,
-    ).expect("compile verified module");
+    // 2. Compile the Section 1 `mem8.recall` module and emit both x86-64 AVX-512 and ARM64 NEON
+    let felix_src = r#"
+        module mem8.recall
+        import felix.tgemm
+        import phoenix.cap
+
+        let W : qtensor<10, 4> = qtensor { p = [+1, -1, 0, +1, 0, -1, +1, -1, 0, +1], q = [0.5, 1.0, 2.0, 0.5] }
+
+        fn pass2(acts: &[i16; 10], q: &qvector<10>) -> i32
+            requires acts.len() == 10
+            ensures result == felix_ternary_gemm_i32(acts, unpack(q))
+        {
+            tgemm(acts, q)
+        }
+
+        @hotswappable
+        fn synthesize(episodes: &[Episode], query: &str) -> Answer
+            effects { cap.io, cap.arena }
+        {
+            let hits = recall(episodes, query, 8);
+            pass2(hits.acts(), hits.q())
+        }
+    "#;
+
+    let pcc_mod = compile_felix_oneshot(felix_src).unwrap();
 
     let x86_art_1 = emit_x86_64_avx512_module(&pcc_mod).unwrap();
     let x86_art_2 = emit_x86_64_avx512_module(&pcc_mod).unwrap();
@@ -44,6 +56,14 @@ fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
     );
     assert!(x86_art_1.vpternlogd_count >= 1);
     assert!(x86_art_1.vpmaddwd_or_smlal_count >= 1);
+
+    // Verify sorted symbol emission order: "pass2" must be emitted before "synthesize"
+    let sym_keys: Vec<&String> = x86_art_1.symbols.keys().collect();
+    assert_eq!(sym_keys, vec!["pass2", "synthesize"]);
+    assert!(
+        x86_art_1.symbols["pass2"].byte_offset < x86_art_1.symbols["synthesize"].byte_offset
+    );
+    assert_eq!(x86_art_1.symbols["synthesize"].safe_point_offsets.len(), 1);
 
     // Verify ARM64 NEON emission
     let arm_art = emit_aarch64_neon_module(&pcc_mod).unwrap();
@@ -57,22 +77,25 @@ fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
     assert!(jit_page.code_len() > 0);
 
     let acts: Vec<i16> = vec![10, -20, 30, 40, -50, 60, 70, -80, 90, 100];
-    let trits: Vec<i8> = vec![1, -1, 0, 1, 0, -1, 1, -1, 0, 1];
+    let qtensor = QuantTernPQTensor::pack(
+        &[1, -1, 0, 1, 0, -1, 1, -1, 0, 1],
+        &[0.5, 1.0, 2.0, 0.5],
+    );
 
     // 3A. Normal native execution with granted capabilities (CAP_IO | CAP_ARENA) -> returns 260
     let mut bridge = JitRuntimeBridge {
         hotswap_pending: 0,
-        granted_caps: (CAP_IO | CAP_ARENA) as u32,
+        granted_caps: CAP_IO | CAP_ARENA,
         tgemm_result_slot: 0,
         exit_status: -99,
     };
-    let native_ret = jit_page.execute_native(&mut bridge, &acts, &trits);
+    let native_ret = jit_page.execute_native(&mut bridge, &acts, &qtensor);
     assert_eq!(bridge.exit_status, 0);
     assert_eq!(native_ret, 260);
 
     // 3B. Safe-point yield triggered in native machine code when `hotswap_pending == 1`
     bridge.hotswap_pending = 1;
-    let yield_ret = jit_page.execute_native(&mut bridge, &acts, &trits);
+    let yield_ret = jit_page.execute_native(&mut bridge, &acts, &qtensor);
     assert_eq!(
         bridge.exit_status, 1,
         "Native JIT code must suspend at safe-point when hotswap_pending == 1"
@@ -81,8 +104,8 @@ fn test_felix_codegen_avx512_vpternlogd_arm64_neon_and_live_wx_jit_page() {
 
     // 3C. Native capability fault when host revokes `CAP_ARENA`
     bridge.hotswap_pending = 0;
-    bridge.granted_caps = 0b0000_1000; // Missing CAP_IO | CAP_ARENA!
-    let fault_ret = jit_page.execute_native(&mut bridge, &acts, &trits);
+    bridge.granted_caps = CAP_NET; // Missing CAP_IO | CAP_ARENA!
+    let fault_ret = jit_page.execute_native(&mut bridge, &acts, &qtensor);
     assert_eq!(
         bridge.exit_status, -1,
         "Native JIT guard must reject execution when required capabilities are missing"

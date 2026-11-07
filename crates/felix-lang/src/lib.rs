@@ -35,6 +35,7 @@ pub mod codegen_v2;
 pub mod diag;
 pub mod eval;
 pub mod felix_codegen_jit;
+pub mod felix_phoenix;
 pub mod graph;
 
 pub mod lexer;
