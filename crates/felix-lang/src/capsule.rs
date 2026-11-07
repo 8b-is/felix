@@ -151,7 +151,7 @@ pub fn parse(text: &str) -> Result<Capsule, VerifyError> {
     };
     let source_bytes = count(field("source-bytes")?, "source-bytes")?;
     let output_bytes = count(field("output-bytes")?, "output-bytes")?;
-    drop(field);
+    // `field` closure goes out of scope here; no explicit `drop` needed.
 
     let mut cut = |marker: &str, len: usize| -> Result<String, VerifyError> {
         let body = rest
