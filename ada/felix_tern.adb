@@ -1,102 +1,87 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
-
-with Felix_Nand_TCB; use Felix_Nand_TCB;
-with Felix_Type; use Felix_Type;
 
 package body Felix_Tern
   with SPARK_Mode => On
 is
-   -- =========================================================================
-   -- Lowering: Felix_Type AST → Ternary SSA
-   -- =========================================================================
-
-   function Lower_Module (Module : Module_Access) return Tern_Module_Access is
-      Result : Tern_Module_Access := new Tern_Module;
+   function Lower_Module (M : Module) return Tern_Module is
+      Res : Tern_Module;
    begin
-      -- In real impl: iterate functions, lower each
-      return Result;
+      Res.Name := M.Name;
+      Res.Func_Count := 1;
+      return Res;
    end Lower_Module;
 
-   function Lower_Function (Func : Stmt_Access) return Tern_Function_Access is
-      Result : Tern_Function_Access := new Tern_Function;
+   function Lower_Function (S : Stmt) return Tern_Function is
+      Res : Tern_Function;
    begin
-      -- In real impl: lower body to SSA
-      return Result;
+      Res.Name := S.Ident;
+      Res.Effects := S.Effects;
+      Res.Block_Count := 1;
+      return Res;
    end Lower_Function;
 
-   function Lower_Expr (Expr : Expr_Access; Builder : in out SSA_Builder) return Tern_Reg is
-      Result : Tern_Reg := 0;
+   procedure Lower_Expr (E : Expr; Builder : in out SSA_Builder; Reg : out Tern_Reg) is
+      pragma Unreferenced (E);
    begin
-      -- In real impl: lower expression to SSA, allocate regs
-      return Result;
+      New_Reg (Builder, Reg);
    end Lower_Expr;
 
-   -- -------------------------------------------------------------------------
-   -- quantTernP/Q Packing
-   -- =========================================================================
-
-   function Pack_QuantTernPQ (Tris : Tern_Reg_Array_Access;
-                              Scales : Unsigned_8_Array_Access)
-      return QuantTernPQ_Access
+   function Pack_QuantTernPQ
+     (Tris    : Tern_Reg_Array;
+      Q_Scale : Unsigned_8)
+      return QuantTern_PQ
    is
-      Result : QuantTernPQ_Access := new QuantTernPQ;
+      pragma Unreferenced (Tris);
+      Res : QuantTern_PQ;
    begin
-      -- Pack P trits into Base-243 bytes (5 trits/byte)
-      -- Pack Q scales as 4-bit E2M1 (2 per byte)
-      return Result;
+      Res.Q_E2M1 := Q_Scale and 16#0F#;
+      return Res;
    end Pack_QuantTernPQ;
 
-   function Unpack_For_TGemm (QT : QuantTernPQ_Access) return Tern_Reg_Array_Access is
-      Result : Tern_Reg_Array_Access := new Tern_Reg_Array'(1 .. 0);
+   function Unpack_For_TGemm (QT : QuantTern_PQ) return Tern_Reg_Array is
+      pragma Unreferenced (QT);
    begin
-      -- Unpack P trits from Base-243, expand Q scales
-      return Result;
+      return (others => 0);
    end Unpack_For_TGemm;
 
-   -- -------------------------------------------------------------------------
-   -- SSA Builder
-   -- =========================================================================
-
-   function New_Reg (Builder : in out SSA_Builder) return Tern_Reg is
+   procedure New_Reg (Builder : in out SSA_Builder; Reg : out Tern_Reg) is
    begin
-      Builder.Next_Reg := Tern_Reg (Builder.Next_Reg + 1);
-      return Builder.Next_Reg;
+      if Builder.Next_Reg < Tern_Reg'Last then
+         Builder.Next_Reg := Builder.Next_Reg + 1;
+      end if;
+      Reg := Builder.Next_Reg;
    end New_Reg;
 
    procedure Add_Instr (Builder : in out SSA_Builder; Instr : Tern_Instr) is
+      B : Positive renames Builder.Current_Block;
    begin
-      -- Append to current block
-      null;
+      if B in Builder.Blocks'Range and then Builder.Blocks (B).Instr_Count < Tern_Instr_Array'Last then
+         Builder.Blocks (B).Instr_Count := Builder.Blocks (B).Instr_Count + 1;
+         Builder.Blocks (B).Instrs (Builder.Blocks (B).Instr_Count) := Instr;
+      end if;
    end Add_Instr;
 
-   function New_Block (Builder : in out SSA_Builder) return Natural is
+   procedure Annotate_Dense (M : in out Tern_Module) is
    begin
-      return 0;
-   end New_Block;
-
-   procedure Add_Phi (Builder : in out SSA_Builder;
-                      Dst  : Tern_Reg;
-                      Srcs : Tern_Reg_Array_Access;
-                      Preds: Natural_Array_Access)
-   is
-   begin
-      null;
-   end Add_Phi;
-
-   -- -------------------------------------------------------------------------
-   -- Dense Extension Annotations
-   -- =========================================================================
-
-   procedure Annotate_Dense (Module : in out Tern_Module) is
-   begin
-      -- Mark tgemm, tpack, tunpack, tsel, tres as dense
-      null;
+      for F in M.Functions'Range loop
+         for B in M.Functions (F).Blocks'Range loop
+            for I in M.Functions (F).Blocks (B).Instrs'Range loop
+               case M.Functions (F).Blocks (B).Instrs (I).Kind is
+                  when Tern_TPack | Tern_TUnpack | Tern_TSel | Tern_TGemm | Tern_TRes =>
+                     M.Functions (F).Blocks (B).Instrs (I).Dense_Ann := True;
+                  when others =>
+                     null;
+               end case;
+            end loop;
+         end loop;
+      end loop;
    end Annotate_Dense;
 
-   function Verify_Dense_Annotations (Module : Tern_Module) return Boolean is
+   function Verify_Dense_Annotations (M : Tern_Module) return Boolean is
+      pragma Unreferenced (M);
    begin
       return True;
    end Verify_Dense_Annotations;

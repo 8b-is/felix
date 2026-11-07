@@ -1,24 +1,22 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
 with Felix_Nand_TCB; use Felix_Nand_TCB;
+with Felix_Front; use Felix_Front;
 with Felix_Type; use Felix_Type;
+with Interfaces; use Interfaces;
 
 package Felix_Tern
   with SPARK_Mode => On
 is
    -- =========================================================================
    -- FELIX-TERN: Lower to Ternary SSA + quantTernP/Q Dense Extension (M2)
-   -- IR is SSA, ternary-typed, dense-annotated
+   -- IR is SSA, ternary-typed, dense-annotated (Zero-Heap SPARK 2022)
    -- =========================================================================
 
-   -- -------------------------------------------------------------------------
-   -- 1. Ternary SSA IR
-   -- -------------------------------------------------------------------------
-
-   type Tern_Reg is new Reg_Index;
+   subtype Tern_Reg is Reg_Index;
 
    type Tern_Value is
      (Val_Trit,      -- {-1, 0, +1}
@@ -44,94 +42,81 @@ is
       Tern_Phi);     -- SSA merge
 
    type Tern_Instr is record
-      Kind       : Tern_Instr_Kind;
-      Dst        : Tern_Reg;
-      Src1       : Tern_Reg;
-      Src2       : Tern_Reg;
-      Imm        : Unsigned_32;
-      Dense_Ann  : Boolean := False;  -- Tier-2 dense extension
+      Kind      : Tern_Instr_Kind := Tern_Nand;
+      Dst       : Tern_Reg := 0;
+      Src1      : Tern_Reg := 0;
+      Src2      : Tern_Reg := 0;
+      Imm       : Unsigned_32 := 0;
+      Dense_Ann : Boolean := False;  -- Tier-2 dense extension
    end record;
+
+   type Tern_Instr_Array is array (1 .. 32) of Tern_Instr;
+   type Tern_Reg_Array   is array (1 .. 32) of Tern_Reg;
 
    type Tern_Basic_Block is record
-      Instrs : Tern_Instr_Array_Access;
-      Succs  : Natural_Array_Access;
-      Preds  : Natural_Array_Access;
+      Instr_Count : Natural := 0;
+      Instrs      : Tern_Instr_Array := (others => <>);
    end record;
+
+   type Tern_Block_Array is array (1 .. 8) of Tern_Basic_Block;
 
    type Tern_Function is record
-      Name       : String_Access;
-      Params     : Tern_Reg_Array_Access;
-      Ret        : Tern_Reg;
-      Blocks     : Tern_Basic_Block_Array_Access;
-      Effect_Row : Effect_Row;
-      Contract   : Contract;
+      Name        : Bounded_Name := Empty_Name;
+      Ret         : Tern_Reg := 0;
+      Block_Count : Natural := 0;
+      Blocks      : Tern_Block_Array := (others => <>);
+      Effects     : Effect_Row := Cap_None;
+      Fn_Contract : Contract;
    end record;
+
+   type Tern_Function_Array is array (1 .. 8) of Tern_Function;
 
    type Tern_Module is record
-      Name      : String_Access;
-      Functions : Tern_Function_Array_Access;
-      Globals   : Tern_Reg_Array_Access;
+      Name       : Bounded_Name := Empty_Name;
+      Func_Count : Natural := 0;
+      Functions  : Tern_Function_Array := (others => <>);
    end record;
 
    -- -------------------------------------------------------------------------
-   -- 2. Lowering: Felix_Type AST → Ternary SSA
+   -- quantTernP/Q Type Representation (55-bit Block32 in 7 wire bytes)
    -- -------------------------------------------------------------------------
 
-   function Lower_Module (Module : Module_Access) return Tern_Module_Access;
+   type Base243_Block_6 is array (0 .. 5) of Base243_Byte;
 
-   function Lower_Function (Func : Stmt_Access) return Tern_Function_Access;
-
-   function Lower_Expr (Expr : Expr_Access; Builder : in out SSA_Builder) return Tern_Reg;
-
-   -- -------------------------------------------------------------------------
-   -- 3. quantTernP/Q Type Representation
-   -- -------------------------------------------------------------------------
-
-   -- quantTernP/Q: P-plane (packed trits, 5 per byte Base-243) + Q-plane (E2M1 scales)
    type QuantTern_PQ is record
-      P_Plane : Base243_Byte_Array_Access;  -- Packed trits
-      Q_Plane : Unsigned_8_Array_Access;    -- 4-bit E2M1 scales (2 per byte)
-      Shape   : Natural_Array_Access;       -- Tensor dimensions
+      P_Plane     : Base243_Block_6 := (others => 121);
+      Tail_Nibble : Unsigned_8 := 4;
+      Q_E2M1      : Unsigned_8 := 5;
    end record;
 
-   -- Pack P trits + Q scales into quantTernP/Q format
-   function Pack_QuantTernPQ (Tris : Tern_Reg_Array_Access;
-                              Scales : Unsigned_8_Array_Access)
-      return QuantTernPQ_Access;
+   function Pack_QuantTernPQ
+     (Tris    : Tern_Reg_Array;
+      Q_Scale : Unsigned_8)
+      return QuantTern_PQ;
 
-   -- Unpack for tgemm consumption
-   function Unpack_For_TGemm (QT : QuantTernPQ_Access) return Tern_Reg_Array_Access;
+   function Unpack_For_TGemm (QT : QuantTern_PQ) return Tern_Reg_Array;
 
    -- -------------------------------------------------------------------------
-   -- 4. SSA Construction
+   -- SSA Construction
    -- -------------------------------------------------------------------------
 
    type SSA_Builder is record
-      Next_Reg   : Tern_Reg := 0;
-      Blocks     : Tern_Basic_Block_Array_Access;
-      Current_Block : Natural := 0;
-      Phi_Nodes  : Phi_Node_Array_Access;
+      Next_Reg      : Tern_Reg := 0;
+      Blocks        : Tern_Block_Array := (others => <>);
+      Current_Block : Positive := 1;
    end record;
 
-   function New_Reg (Builder : in out SSA_Builder) return Tern_Reg;
-
+   procedure New_Reg (Builder : in out SSA_Builder; Reg : out Tern_Reg);
    procedure Add_Instr (Builder : in out SSA_Builder; Instr : Tern_Instr);
-
-   function New_Block (Builder : in out SSA_Builder) return Natural;
-
-   procedure Add_Phi (Builder : in out SSA_Builder;
-                      Dst  : Tern_Reg;
-                      Srcs : Tern_Reg_Array_Access;
-                      Preds: Natural_Array_Access);
+   function Lower_Module (M : Module) return Tern_Module;
+   function Lower_Function (S : Stmt) return Tern_Function;
+   procedure Lower_Expr (E : Expr; Builder : in out SSA_Builder; Reg : out Tern_Reg);
 
    -- -------------------------------------------------------------------------
-   -- 4. Dense Extension Annotations (Tier-2)
+   -- Dense Extension Annotations (Tier-2)
    -- -------------------------------------------------------------------------
 
-   -- Annotate IR with dense extension markers for Tier-2 macro expansion
-   procedure Annotate_Dense (Module : in out Tern_Module);
-
-   -- Verify dense annotations are well-formed
-   function Verify_Dense_Annotations (Module : Tern_Module) return Boolean;
+   procedure Annotate_Dense (M : in out Tern_Module);
+   function Verify_Dense_Annotations (M : Tern_Module) return Boolean;
 
 end Felix_Tern;

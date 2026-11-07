@@ -150,8 +150,8 @@ fn cmd_verify(text: &str) -> Result<(), Fail> {
 
 fn cmd_phoenix() -> Result<(), Fail> {
     use felix_lang::phoenix::{
-        build_canonical_mem8_recall_module, felix_ternary_gemm_i32, verify_ada_spark_arc,
-        PhoenixSymbioticVm, QuantTernBlock32,
+        build_canonical_mem8_recall_module, felix_kleene_nand_trit_asm, felix_ternary_gemm_i32,
+        verify_ada_spark_arc, PhoenixSymbioticVm, QuantTernBlock32, SPARK_ARC_PACKAGES,
     };
     let mut trits32 = [0i8; 32];
     for (i, slot) in trits32.iter_mut().enumerate() {
@@ -189,7 +189,11 @@ fn cmd_phoenix() -> Result<(), Fail> {
     println!("  • Tier-1 TCB (6 Ops)   : nand, ld, st, br/call/ret, cap (0x{:02x}), yield (@hotswappable)", vm.active_module.pcc.declared_effects);
     println!("  • FELIX-VERIFY PCC v1  : {} (contract={})", &hash_v1[..32], &contract_hash[..16]);
     println!("  • PHOENIX Hot-Swap v2  : {} (epoch={} @ yield safe-point)", &hash_v2[..32], vm.hotswap_epoch);
-    println!("  • MEM8 Pass-2 TGemm    : score_v1={score_v1} == score_v2={score_v2} == felix_ternary_gemm_i32={ref_gemm} (bit-exact ✓)");
+    let nand_pos = felix_kleene_nand_trit_asm(1, 1);
+    let nand_neg = felix_kleene_nand_trit_asm(-1, 1);
+    let nand_zero = felix_kleene_nand_trit_asm(0, 1);
+    println!("  • MEM8 Pass-2 TGemm    : score_v1={score_v1} == score_v2={score_v2} == felix_ternary_gemm_i32={ref_gemm} (NEON/SSE2 8-lane ✓)");
+    println!("  • Kleene NAND InlineASM: nand(+1,+1)={nand_pos}, nand(-1,+1)=+{nand_neg}, nand(0,+1)={nand_zero} (cmp+csel+neg ✓)");
 
     let ada_candidates = [
         std::path::PathBuf::from("ada"),
@@ -199,8 +203,9 @@ fn cmd_phoenix() -> Result<(), Fail> {
         if cand.is_dir() {
             if let Ok(audit) = verify_ada_spark_arc(cand) {
                 println!(
-                    "  • Ada/SPARK 2022 Arc   : {}/9 packages ({} files, {} B, SPARK_Mode={}, No_Heap={}, contracts={}, sha256={})",
+                    "  • Ada/SPARK 2022 Arc   : {}/{} packages ({} files, {} B, SPARK_Mode={}, No_Heap={}, contracts={}, sha256={})",
                     audit.packages_verified,
+                    SPARK_ARC_PACKAGES.len(),
                     audit.total_files,
                     audit.total_bytes,
                     audit.spark_mode_on_count,

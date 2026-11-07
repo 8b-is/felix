@@ -1,145 +1,119 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
+with Felix_Nand_TCB; use Felix_Nand_TCB;
+with Felix_NAND; use Felix_NAND;
 with Felix_Codegen; use Felix_Codegen;
 with Felix_Verify; use Felix_Verify;
+with Interfaces; use Interfaces;
 
 package Phoenix_Linker
   with SPARK_Mode => On
 is
    -- =========================================================================
-   -- PHOENIX LINKER: Incremental Parallel Linker (M3)
+   -- PHOENIX LINKER: Incremental Parallel Linker (M3, Zero-Heap SPARK 2022)
    -- Content-addressed modules, lock-free symbol table, parallel DAG walk
    -- =========================================================================
 
-   -- -------------------------------------------------------------------------
-   -- 1. Content-Addressed Modules
-   -- -------------------------------------------------------------------------
-
-   type Module_Hash is new Unsigned_64;  -- SHA-256(IR ∥ compiler-version)
+   subtype Module_Hash is Unsigned_64;
 
    type Module_Record is record
-      Hash        : Module_Hash;
-      Binary      : Binary_Module;
-      PCC_Proofs  : PCC_Module;
-      Dependencies: Module_Hash_Array_Access;
-      Exports     : Symbol_Array_Access;
+      Hash       : Module_Hash := 0;
+      Binary     : Binary_Module;
+      PCC_Proofs : PCC_Module;
+      Valid      : Boolean := False;
    end record;
 
-   -- Content-addressed module store (sharded, lock-free)
-   type Module_Store is limited private;
+   Max_Stored_Modules : constant := 8;
+   type Module_Record_Array is array (1 .. Max_Stored_Modules) of Module_Record;
+   type Module_Hash_Array   is array (1 .. Max_Stored_Modules) of Module_Hash;
 
-   procedure Store_Init (Store : out Module_Store; Num_Shards : Natural := 64);
-   procedure Store_Insert (Store : in out Module_Store; Module : Module_Record);
-   function Store_Lookup (Store : Module_Store; Hash : Module_Hash)
-      return Module_Record_Access;
+   type Module_Store is record
+      Count  : Natural := 0;
+      Shards : Module_Record_Array := (others => <>);
+   end record;
 
-   -- -------------------------------------------------------------------------
-   -- 2. Incremental Linking
-   -- -------------------------------------------------------------------------
+   procedure Store_Init (Store : out Module_Store; Num_Shards : Natural := 8);
+   procedure Store_Insert (Store : in out Module_Store; M : Module_Record);
+   function Store_Lookup (Store : Module_Store; Hash : Module_Hash) return Module_Record;
 
    type Link_Request is record
-      Entry_Module : Module_Hash;
+      Entry_Module : Module_Hash := 0;
       Force_Relink : Boolean := False;
    end record;
 
    type Link_Result is record
-      Binary          : Binary_Module;
-      Relinked_Modules: Module_Hash_Array_Access;
-      Link_Time_Ms    : Natural;
+      Binary           : Binary_Module;
+      Relinked_Count   : Natural := 0;
+      Relinked_Modules : Module_Hash_Array := (others => 0);
+      Link_Time_Ms     : Natural := 0;
    end record;
 
-   -- Incremental link: only relink changed modules + transitive dependents
    function Link_Incremental
      (Store : Module_Store;
       Req   : Link_Request)
       return Link_Result;
 
-   -- Compute transitive dependents of a changed module
    function Compute_Transitive_Dependents
-     (Store : Module_Store;
+     (Store   : Module_Store;
       Changed : Module_Hash)
-      return Module_Hash_Array_Access;
-
-   -- -------------------------------------------------------------------------
-   -- 3. Parallel Relocation DAG Walk
-   -- -------------------------------------------------------------------------
+      return Module_Hash_Array;
 
    type Relocation_Task is record
-      Module  : Module_Hash;
-      Reloc   : Relocation;
-      Symbol  : String_Access;
+      Mod_Hash : Module_Hash := 0;
+      Reloc    : Relocation;
+      Sym      : Bounded_Name := Empty_Name;
    end record;
 
-   -- Work-stealing parallel relocation application
-   procedure Apply_Relocations_Parallel
-     (Tasks : Relocation_Task_Array_Access;
-      Store : Module_Store);
+   type Relocation_Task_Array is array (1 .. 16) of Relocation_Task;
 
-   -- -------------------------------------------------------------------------
-   -- 4. JIT Integration
-   -- -------------------------------------------------------------------------
+   procedure Apply_Relocations_Parallel
+     (Tasks : Relocation_Task_Array;
+      Store : Module_Store);
 
    type JIT_Tier is (Tier_Interp, Tier_Tier0, Tier_Tier1);
 
    type JIT_Config is record
-      Hot_Count_Threshold : Natural := 1000;
-      Tier0_Time_Budget_Ms: Natural := 5;
-      Tier1_Time_Budget_Ms: Natural := 50;
+      Hot_Count_Threshold  : Natural := 1000;
+      Tier0_Time_Budget_Ms : Natural := 5;
+      Tier1_Time_Budget_Ms : Natural := 50;
    end record;
 
    type JIT_Module is record
-      Base_Binary    : Binary_Module;
-      Tier           : JIT_Tier := Tier_Interp;
-      Hot_Count      : Natural := 0;
-      Tier0_Code     : Binary_Module_Access;
-      Tier1_Code     : Binary_Module_Access;
+      Base_Binary : Binary_Module;
+      Tier        : JIT_Tier := Tier_Interp;
+      Hot_Count   : Natural := 0;
+      Tier0_Code  : Binary_Module;
+      Tier1_Code  : Binary_Module;
    end record;
 
-   -- JIT compilation at runtime
    procedure JIT_Compile
-     (Module   : in out JIT_Module;
-      Target   : Target_Arch;
-      Config   : JIT_Config);
+     (M      : in out JIT_Module;
+      Target : Target_Arch;
+      Config : JIT_Config);
 
-   -- Hot-swap trampoline patching
    procedure Patch_Hot_Swap
      (Old_Entry : Unsigned_64;
       New_Entry : Unsigned_64);
 
-   -- -------------------------------------------------------------------------
-   -- 5. Verification at Link Time
-   -- -------------------------------------------------------------------------
-
-   -- Verify PCC proofs of all linked modules
    function Verify_Linked_Modules
-     (Modules : Module_Record_Array_Access)
+     (Modules : Module_Record_Array)
       return Boolean;
 
-   -- Verify no capability escalation
    function Verify_No_Cap_Escalation
-     (Module : Binary_Module)
+     (M : Binary_Module)
       return Boolean;
-
-   -- -------------------------------------------------------------------------
-   -- 6. Linker Statistics
-   -- -------------------------------------------------------------------------
 
    type Link_Stats is record
-      Total_Modules      : Natural;
-      Relinked_Modules   : Natural;
-      Relocations_Applied: Natural;
-      Link_Time_Ms       : Natural;
-      Parallel_Speedup   : Float;
+      Total_Modules       : Natural := 0;
+      Relinked_Modules    : Natural := 0;
+      Relocations_Applied : Natural := 0;
+      Link_Time_Ms        : Natural := 0;
+      Parallel_Speedup    : Float := 1.0;
    end record;
 
    function Get_Link_Stats return Link_Stats;
-
-private
-   type Module_Store is record
-      Shards : Module_Record_Array_Access;  -- In real impl: lock-free hash map
-   end record;
 
 end Phoenix_Linker;

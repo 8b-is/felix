@@ -1,10 +1,11 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
 with Felix_Nand_TCB; use Felix_Nand_TCB;
 with Felix_Front; use Felix_Front;
+with Interfaces; use Interfaces;
 
 package Felix_Type
   with SPARK_Mode => On
@@ -28,15 +29,16 @@ is
       Ty_Bool,         -- Boolean
       Ty_Array);       -- Array of base types (for tensor literals)
 
-   type Type is record
-      Base   : Base_Type;
-      Linear : Boolean := False;  -- Linear capability (π = 1)
-      Refinement : Expr_Access;   -- Refinement predicate (requires/ensures)
-      Size   : Natural := 0;      -- For arrays/tensors
+   type Felix_Type_Desc is record
+      Base       : Base_Type := Ty_Int;
+      Linear     : Boolean := False;  -- Linear capability (π = 1)
+      Has_Refine : Boolean := False;
+      Refinement : Expr;              -- Refinement predicate (requires/ensures)
+      Size       : Natural := 0;      -- For arrays/tensors
    end record;
 
    -- Subtyping: linear types cannot be implicitly copied
-   function Subtype (Sub, Super : Type) return Boolean;
+   function Is_Subtype (Sub, Super : Felix_Type_Desc) return Boolean;
 
    -- -------------------------------------------------------------------------
    -- 2. Linear/Borrow Environment (π = 1)
@@ -48,32 +50,32 @@ is
       Lin_Consumed);  -- Consumed exactly once
 
    type Var_Info is record
-      Name       : String_Access;
-      Ty         : Type;
-      Lin_State  : Linear_State := Lin_Free;
-      Scope_Depth: Natural := 0;
-      Def_At     : PC_Index := 0;
+      Name        : Bounded_Name := Empty_Name;
+      Ty          : Felix_Type_Desc;
+      Lin_State   : Linear_State := Lin_Free;
+      Scope_Depth : Natural := 0;
+      Def_At      : PC_Index := 0;
    end record;
 
-   type Linear_Env is array (Natural range <>) of Var_Info;
+   Max_Linear_Vars : constant := 32;
+   subtype Linear_Slot is Positive range 1 .. Max_Linear_Vars;
+   type Linear_Env is array (Linear_Slot) of Var_Info;
 
    -- Bind a linear variable
    procedure Bind_Linear
      (Env   : in out Linear_Env;
-      Name  : String_Access;
-      Ty    : Type;
-      Depth : Natural)
+      Slot  : in     Linear_Slot;
+      Name  : in     Bounded_Name;
+      Ty    : in     Felix_Type_Desc;
+      Depth : in     Natural)
      with
-       Post => Env (Env'Last).Name = Name and Env (Env'Last).Lin_State = Lin_Bound;
+       Post => Env (Slot).Name = Name and Env (Slot).Lin_State = Lin_Bound;
 
    -- Consume a linear variable (must be exactly once)
-   function Consume_Linear
+   procedure Consume_Linear
      (Env  : in out Linear_Env;
-      Name : String_Access)
-      return Boolean
-     with
-       Post => (Consume_Linear'Result = True) =
-               (Env (Env'Last).Lin_State = Lin_Consumed);
+      Name : in     Bounded_Name;
+      Ok   : out    Boolean);
 
    -- Verify all linear vars consumed at scope exit (π = 1)
    function Verify_Scope_Exit (Env : Linear_Env; Depth : Natural) return Boolean;
@@ -82,67 +84,66 @@ is
    -- 3. Effect Row System (backdoor-free by construction)
    -- -------------------------------------------------------------------------
 
-   type Effect_Row is new Capability_Mask;
+   subtype Effect_Row is Capability_Mask;
 
-   -- Effect row of a function = union of all capabilities it invokes
-   function Compute_Effect_Row (Stmt : Stmt_Access) return Effect_Row;
+   -- Effect row of a statement = union of all capabilities it invokes
+   function Compute_Effect_Row (S : Stmt) return Effect_Row;
 
    -- Check effect compatibility: caller's effects ⊇ callee's effects
-   function Effects_Compatible (Caller, Callee : Effect_Row) return Boolean;
+   function Effects_Compatible (Caller, Callee : Effect_Row) return Boolean
+     with
+       Post => Effects_Compatible'Result = ((Callee and (not Caller)) = 0);
 
    -- -------------------------------------------------------------------------
    -- 4. Refinement Types (requires/ensures)
    -- -------------------------------------------------------------------------
 
    type Contract is record
-      Requires : Expr_Array_Access;  -- Preconditions
-      Ensures  : Expr_Array_Access;  -- Postconditions
+      Requires_Expr : Expr;
+      Ensures_Expr  : Expr;
+      Active        : Boolean := False;
    end record;
 
-   -- Verify contract: {P} f {Q} where P,Q are first-order predicates
    function Verify_Contract
-     (Pre   : Expr_Access;
-      Post  : Expr_Access;
-      Body  : Stmt_Array_Access)
+     (Pre_Cond  : Expr;
+      Post_Cond : Expr;
+      Stmts     : Stmt_Array)
       return Boolean;
 
-   -- Discharge via SMT (Why3) - returns True if proved, False if unknown
-   function Discharge_Via_SMT (Pred : Expr_Access) return Boolean;
+   function Discharge_Via_SMT (Pred : Expr) return Boolean;
 
    -- -------------------------------------------------------------------------
    -- 5. Builtin Type Table (every builtin has declared type signature)
    -- -------------------------------------------------------------------------
 
    type Builtin_Sig is record
-      Name       : String_Access;
-      Args       : Type_Array_Access;
-      Ret        : Type;
-      Effect_Row : Effect_Row;
-      Linear_Args: Boolean_Array_Access;  -- Which args are linear
+      Name       : Bounded_Name := Empty_Name;
+      Ret        : Felix_Type_Desc;
+      Effects    : Effect_Row := Cap_None;
+      Linear_Arg : Boolean := False;
    end record;
 
-   -- Builtin table (walked by test to ensure completeness)
-   function Builtin_Table return Builtin_Sig_Array_Access;
+   type Builtin_Sig_Array is array (1 .. 8) of Builtin_Sig;
 
-   function Lookup_Builtin (Name : String_Access) return Builtin_Sig_Access;
+   function Builtin_Table return Builtin_Sig_Array;
+   function Lookup_Builtin (Name : Bounded_Name) return Builtin_Sig;
 
    -- -------------------------------------------------------------------------
    -- 6. Type Checking Entry Points
    -- -------------------------------------------------------------------------
 
    type Check_Result is record
-      Ok       : Boolean;
-      Diagnostics : Diagnostic_Array_Access;
-      Typed_AST : Module_Access;
+      Ok        : Boolean := True;
+      Diag      : Diagnostic;
+      Typed_AST : Module;
    end record;
 
-   function Type_Check (Module : Module_Access) return Check_Result;
+   function Type_Check (M : Module) return Check_Result;
 
-   -- Type check a single expression in context
    function Type_Check_Expr
-     (Env : Linear_Env;
-      Expr : Expr_Access;
-      Expected : Type)
-      return Type;
+     (Env      : Linear_Env;
+      E        : Expr;
+      Expected : Felix_Type_Desc)
+      return Felix_Type_Desc;
 
 end Felix_Type;

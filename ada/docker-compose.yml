@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  felix-build:
+    image: ghcr.io/ada-core/gnat:2024
+    container_name: felix-ada-build
+    working_dir: /src
+    volumes:
+      - .:/src
+    command: >
+      bash -c "
+        set -e
+        echo '=== Building FELIX Ada ===' 
+        gprbuild -P felix.gpr -j0
+        echo '=== Running SPARK Proofs (Level 2) ==='
+        gnatprove -P felix.gpr --level=2 --replay --report=all --counterexample --steps=10000
+        echo '=== Running Tests ==='
+        ./test_harness.sh ./obj/felix_nand_tcb
+        echo '=== Running Benchmarks ==='
+        ./run_benchmarks 100000 10000
+      "
+    environment:
+      - GPRBUILD_ARGS=-P felix.gpr -j0
+      - GNATPROVE_ARGS=-P felix.gpr --level=2 --replay --report=all --counterexample --steps=10000
+
+  felix-prove:
+    image: ghcr.io/ada-core/gnat:2024
+    container_name: felix-ada-prove
+    working_dir: /src
+    volumes:
+      - .:/src
+    command: >
+      bash -c "
+        set -e
+        echo '=== SPARK Proofs Only (Level 2) ==='
+        gnatprove -P felix.gpr --level=2 --replay --report=all --counterexample --steps=10000
+      "
+
+  felix-docs:
+    image: ghcr.io/ada-core/gnat:2024
+    container_name: felix-ada-docs
+    working_dir: /src
+    volumes:
+      - .:/src
+    command: >
+      bash -c "
+        set -e
+        echo '=== Generating GNATdoc ==='
+        gnatdoc -P felix.gpr -o docs --format=html --index=README.md ada/
+      "

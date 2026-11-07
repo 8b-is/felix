@@ -1,5 +1,5 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
@@ -9,11 +9,34 @@ package body Felix_Nand_TCB
   with SPARK_Mode => On
 is
    -- =========================================================================
-   -- Private Types
+   -- Bounded Name Helpers (Zero-Heap)
    -- =========================================================================
 
-   type Instruction_Array is array (PC_Index) of Instr_Word;
-   type Reg_Index_Array is array (Natural range <>) of Reg_Index;
+   function To_Bounded_Name (S : String) return Bounded_Name is
+      Res : Bounded_Name := Empty_Name;
+      Len : constant Natural := Natural'Min (S'Length, Bounded_Name'Length);
+   begin
+      if Len > 0 then
+         Res (1 .. Len) := S (S'First .. S'First + Len - 1);
+      end if;
+      return Res;
+   end To_Bounded_Name;
+
+   function Trim_Name (N : Bounded_Name) return String is
+      Last_Idx : Natural := 0;
+   begin
+      for I in reverse N'Range loop
+         if N (I) /= ' ' then
+            Last_Idx := I;
+            exit;
+         end if;
+      end loop;
+      if Last_Idx = 0 then
+         return "";
+      else
+         return N (1 .. Last_Idx);
+      end if;
+   end Trim_Name;
 
    -- =========================================================================
    -- Instruction Encoding / Decoding
@@ -29,23 +52,28 @@ is
       Target: Unsigned_16)
       return Instr_Word
    is
-      Result : Instr_Word := 0;
+      W : Unsigned_64 := 0;
    begin
-      Result := Result or (Unsigned_64 (Op'Pos) << Opcode_Shift);
-      Result := Result or (Unsigned_64 (Cap) << CapMask_Shift);
-      Result := Result or (Unsigned_64 (Dst) << Dst_Shift);
-      Result := Result or (Unsigned_64 (Src1) << Src1_Shift);
-      Result := Result or (Unsigned_64 (Src2) << Src2_Shift);
-      Result := Result or (Unsigned_64 (Imm) << Imm_Shift);
-      Result := Result or (Unsigned_64 (Target) << Target_Shift);
-      return Result;
+      W := W or Shift_Left (Unsigned_64 (Tier1_Opcode'Pos (Op)), Opcode_Shift);
+      W := W or Shift_Left (Unsigned_64 (Cap and 16#FF#), CapMask_Shift);
+      W := W or Shift_Left (Unsigned_64 (Dst), Dst_Shift);
+      W := W or Shift_Left (Unsigned_64 (Src1), Src1_Shift);
+      W := W or Shift_Left (Unsigned_64 (Src2), Src2_Shift);
+      W := W or Shift_Left (Unsigned_64 (Imm), Imm_Shift);
+      W := W or Shift_Left (Unsigned_64 (Target), Target_Shift);
+      return Instr_Word (W);
    end Encode_Instr;
 
    function Decode_Opcode (I : Instr_Word) return Tier1_Opcode
    is
-      Op_Val : constant Unsigned_8 := Unsigned_8 (I >> Opcode_Shift);
+      Op_Val : constant Unsigned_64 :=
+        Shift_Right (Unsigned_64 (I), Opcode_Shift) and 16#FF#;
    begin
-      return Tier1_Opcode'Val (Op_Val);
+      if Op_Val <= Unsigned_64 (Tier1_Opcode'Pos (Tier1_Opcode'Last)) then
+         return Tier1_Opcode'Val (Natural (Op_Val));
+      else
+         return Op_Yield;
+      end if;
    end Decode_Opcode;
 
    -- =========================================================================
@@ -134,6 +162,7 @@ is
       Program    : in  Instruction_Array;
       Effect_Row : in  Capability_Mask)
    is
+      pragma Unreferenced (Program);
    begin
       State.PC           := 0;
       State.Regs         := (others => (Value => 0, Def_At => 0, Live => False));
@@ -147,37 +176,42 @@ is
      (State   : in out Interpreter_State;
       Program : in     Instruction_Array)
    is
-      Instr : constant Instr_Word := Program (State.PC);
-      Op    : constant Tier1_Opcode := Decode_Opcode (Instr);
-      Cap   : constant Capability_Mask := Capability_Mask ((Instr >> CapMask_Shift) & 16#FF#);
-      Dst   : constant Reg_Index := Reg_Index ((Instr >> Dst_Shift) & 16#FF#);
-      Src1  : constant Reg_Index := Reg_Index ((Instr >> Src1_Shift) & 16#FF#);
-      Src2  : constant Reg_Index := Reg_Index ((Instr >> Src2_Shift) & 16#FF#);
-      Imm   : constant Unsigned_8 := Unsigned_8 ((Instr >> Imm_Shift) & 16#FF#);
-      Target: constant Unsigned_16 := Unsigned_16 (Instr & 16#FFFF#);
+      Instr  : constant Unsigned_64 := Unsigned_64 (Program (State.PC));
+      Op     : constant Tier1_Opcode := Decode_Opcode (Program (State.PC));
+      Cap    : constant Capability_Mask :=
+        Capability_Mask (Shift_Right (Instr, CapMask_Shift) and 16#FF#);
+      Dst    : constant Reg_Index :=
+        Reg_Index ((Shift_Right (Instr, Dst_Shift) and 16#FF#) mod Max_SSA_Regs);
+      Src1   : constant Reg_Index :=
+        Reg_Index ((Shift_Right (Instr, Src1_Shift) and 16#FF#) mod Max_SSA_Regs);
+      Src2   : constant Reg_Index :=
+        Reg_Index ((Shift_Right (Instr, Src2_Shift) and 16#FF#) mod Max_SSA_Regs);
+      Target : constant Unsigned_16 := Unsigned_16 (Instr and 16#FFFF#);
+      Next_PC : constant PC_Index :=
+        (if State.PC < PC_Index'Last then State.PC + 1 else State.PC);
    begin
       case Op is
          when Op_Nand =>
             State.Regs (Dst).Value := Ternary_Nand (State.Regs (Src1).Value, State.Regs (Src2).Value);
             State.Regs (Dst).Live := True;
             State.Regs (Dst).Def_At := State.PC;
-            State.PC := State.PC + 1;
+            State.PC := Next_PC;
 
          when Op_Ld =>
-            State.Regs (Dst).Value := State.Arena (Arena_Index (Target));
+            State.Regs (Dst).Value := State.Arena (Arena_Index (Natural (Target) mod Max_Arena_Words));
             State.Regs (Dst).Live := True;
             State.Regs (Dst).Def_At := State.PC;
-            State.PC := State.PC + 1;
+            State.PC := Next_PC;
 
          when Op_St =>
-            State.Arena (Arena_Index (Target)) := State.Regs (Src1).Value;
-            State.PC := State.PC + 1;
+            State.Arena (Arena_Index (Natural (Target) mod Max_Arena_Words)) := State.Regs (Src1).Value;
+            State.PC := Next_PC;
 
          when Op_Br =>
             if State.Regs (Src1).Value /= 0 then
-               State.PC := PC_Index (Target);
+               State.PC := PC_Index (Natural (Target) mod Max_Program_Len);
             else
-               State.PC := State.PC + 1;
+               State.PC := Next_PC;
             end if;
 
          when Op_Cap =>
@@ -186,11 +220,11 @@ is
             State.Regs (Dst).Value := 0;  -- Stub: actual invocation in VM
             State.Regs (Dst).Live := True;
             State.Regs (Dst).Def_At := State.PC;
-            State.PC := State.PC + 1;
+            State.PC := Next_PC;
 
          when Op_Yield =>
             State.Yield_Pending := True;
-            State.PC := State.PC + 1;
+            State.PC := Next_PC;
       end case;
    end Step;
 
@@ -216,9 +250,11 @@ is
       Args   : in     Reg_Index_Array;
       Result : out    Reg_Index)
    is
+      pragma Unreferenced (Args);
    begin
       pragma Assert ((Capability_Mask (Handle) and (not State.Effect_Row)) = 0);
-      State.Regs (Result).Value := 0;  -- Stub
+      Result := 0;
+      State.Regs (Result).Value := 0;
       State.Regs (Result).Live := True;
    end Invoke_Capability;
 

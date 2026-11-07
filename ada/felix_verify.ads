@@ -1,54 +1,29 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
 with Felix_Nand_TCB; use Felix_Nand_TCB;
-with Felix_NAND; use Felix_NAND;
+with Felix_Tern; use Felix_Tern;
+with Interfaces; use Interfaces;
 
 package Felix_Verify
   with SPARK_Mode => On
 is
    -- =========================================================================
-   -- FELIX-VERIFY: Safety + Info-Flow + PCC (M5)
+   -- FELIX-VERIFY: Safety + Info-Flow + PCC (M5, Zero-Heap SPARK 2022)
    -- Post: proof-carrying module emitted
    -- =========================================================================
 
-   -- -------------------------------------------------------------------------
-   -- 1. Safety Properties
-   -- -------------------------------------------------------------------------
+   function Verify_Arena_Bounds (M : Tern_Module) return Boolean;
+   function Verify_Register_Bounds (M : Tern_Module) return Boolean;
+   function Verify_PC_Bounds (M : Tern_Module) return Boolean;
+   function Verify_Capability_Safety (M : Tern_Module) return Boolean;
+   function Verify_No_Overflow (M : Tern_Module) return Boolean;
 
-   -- Arena bounds: all loads/stores stay within Max_Arena_Words
-   function Verify_Arena_Bounds (Module : Tern_Module) return Boolean;
-
-   -- Register bounds: all register accesses stay within Max_SSA_Regs
-   function Verify_Register_Bounds (Module : Tern_Module) return Boolean;
-
-   -- PC bounds: all jumps stay within Max_Program_Len
-   function Verify_PC_Bounds (Module : Tern_Module) return Boolean;
-
-   -- Capability safety: (Cap & ~Effect_Row) = 0 for all Op_Cap
-   function Verify_Capability_Safety (Module : Tern_Module) return Boolean;
-
-   -- No integer overflow in Tier-1 ops
-   function Verify_No_Overflow (Module : Tern_Module) return Boolean;
-
-   -- -------------------------------------------------------------------------
-   -- 2. Information-Flow Security
-   -- -------------------------------------------------------------------------
-
-   -- No secret-dependent branches in TCB
-   function Verify_No_Secret_Branches (Module : Tern_Module) return Boolean;
-
-   -- Information-flow type system: no high→low leaks
-   function Verify_Info_Flow (Module : Tern_Module) return Boolean;
-
-   -- Non-interference: changing secret inputs doesn't affect public outputs
-   function Verify_Non_Interference (Module : Tern_Module) return Boolean;
-
-   -- -------------------------------------------------------------------------
-   -- 3. Proof-Carrying Code (PCC)
-   -- -------------------------------------------------------------------------
+   function Verify_No_Secret_Branches (M : Tern_Module) return Boolean;
+   function Verify_Info_Flow (M : Tern_Module) return Boolean;
+   function Verify_Non_Interference (M : Tern_Module) return Boolean;
 
    type Proof_Kind is
      (Proof_Arena_Bounds,
@@ -62,40 +37,31 @@ is
       Proof_Contract_Discharge);
 
    type Proof_Term is record
-      Kind      : Proof_Kind;
-      Statement : String_Access;  -- What was proved
-      Witness   : String_Access;  -- SMT proof witness / certificate
+      Kind      : Proof_Kind := Proof_Arena_Bounds;
+      Statement : Bounded_Name := Empty_Name;
+      Witness   : Bounded_Name := Empty_Name;
       Checked   : Boolean := False;
    end record;
 
+   type Proof_Term_Array is array (Proof_Kind) of Proof_Term;
+
    type PCC_Module is record
-      Code       : Tern_Module;
-      Proofs     : Proof_Term_Array_Access;
-      Verified   : Boolean := False;
-      Hash       : Unsigned_64;  -- SHA-256 of (Code ∥ Proofs)
+      Code     : Tern_Module;
+      Proofs   : Proof_Term_Array := (others => <>);
+      Verified : Boolean := False;
+      Hash     : Unsigned_64 := 0;
    end record;
 
-   -- Emit PCC module with all proofs
-   function Emit_PCC (Module : Tern_Module) return PCC_Module_Access;
+   function Emit_PCC (M : Tern_Module) return PCC_Module
+     with
+       Post => Emit_PCC'Result.Verified = True;
 
-   -- Verify PCC module (linker uses this)
-   function Verify_PCC (Module : PCC_Module) return Boolean;
+   function Verify_PCC (M : PCC_Module) return Boolean;
+   function Discharge_Contracts (M : Tern_Module) return Boolean;
 
-   -- -------------------------------------------------------------------------
-   -- 4. Contract Discharge via SMT
-   -- -------------------------------------------------------------------------
-
-   -- Discharge all requires/ensures via Why3/Z3
-   function Discharge_Contracts (Module : Tern_Module) return Boolean;
-
-   -- -------------------------------------------------------------------------
-   -- 5. Reproducibility Proof
-   -- -------------------------------------------------------------------------
-
-   -- Prove bit-identical compilation across machines
    function Prove_Reproducibility
-     (Source : String_Access;
-      Compiler_Version : String_Access)
+     (Source           : Bounded_Name;
+      Compiler_Version : Bounded_Name)
       return Boolean;
 
 end Felix_Verify;

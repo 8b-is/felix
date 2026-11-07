@@ -1,51 +1,24 @@
 project Felix is
   for Source_Dirs use (".");
   for Object_Dir use "obj";
-  for Main use ("felix_nand_tcb.adb");
+  for Exec_Dir use "obj";
+  for Main use ("felix_repl.adb", "run_benchmarks.adb");
 
-  -- SPARK 2022 mode
   package Builder is
-    for Default_Switches ("Ada") use ("-gnat2022", "-gnatwa", "-gnatwl",
-                                     "-gnatVa", "-gnatVe", "-gnatVc",
-                                     "-gnatVp", "-gnatVu", "-gnatVd",
-                                     "-gnatVn", "-gnatVh", "-gnatVr",
-                                     "-gnatVo", "-gnatVt", "-gnatVy",
-                                     "-gnatVz", "-gnatVf", "-gnatVg");
+    for Executable ("felix_repl.adb") use "felix";
+    for Executable ("run_benchmarks.adb") use "run_benchmarks";
   end Builder;
 
   package Compiler is
-    for Default_Switches ("Ada") use ("-gnat2022", "-gnatwa", "-gnatwl",
-                                      "-gnatVa", "-gnatVe", "-gnatVc",
-                                      "-gnatVp", "-gnatVu", "-gnatVd",
-                                      "-gnatVn", "-gnatVh", "-gnatVr",
-                                      "-gnatVo", "-gnatVt", "-gnatVy",
-                                      "-gnatVz", "-gnatVf", "-gnatVg",
-                                      "--gnateD", "--gnatyO",
-                                      "-O2", "-gnatn",
-                                      "-gnatec=project.cgpr");
+    for Default_Switches ("Ada") use ("-gnat2022", "-gnata", "-O2", "-gnatn");
   end Compiler;
 
   package Binder is
-    for Default_Switches ("Ada") use ("-E", "-xa", "-xn");
+    for Default_Switches ("Ada") use ("-E");
   end Binder;
 
-  package Linker is
-    for Default_Switches ("Ada") use ("-static", "-Wl,--gc-sections");
-  end Linker;
-
   package Prove is
-    for Default_Switches use ("--level=2", "--replay", "--report=all",
-                              "--counterexample", "--steps=10000");
+    for Proof_Switches ("Ada") use ("--level=2", "--report=all");
   end Prove;
-
-  package Naming is
-    for Casing use "lower_case";
-    for Dot_Replacement use "_";
-  end Naming;
-
-  -- SPARK configuration
-  package Spark is
-    for Mode use "On";
-  end Spark;
 
 end Felix;

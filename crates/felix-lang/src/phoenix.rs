@@ -58,15 +58,58 @@ pub const fn tsel_i32(cond: i8, on_pos: i32, on_zero: i32, on_neg: i32) -> i32 {
     (on_pos & is_pos) | (on_zero & is_zero) | (on_neg & is_neg)
 }
 
+/// Hardware inline-assembly Balanced-Ternary Kleene NAND (`¬(a ∧ b) = -min(a, b)` for `a, b ∈ {-1, 0, +1}`).
+/// Uses a 3-instruction branchless `cmp` + `csel` + `neg` sequence on `aarch64` and `cmp` + `cmovg` + `neg` on `x86_64`.
+#[inline(always)]
+pub fn felix_kleene_nand_trit_asm(a: i8, b: i8) -> i8 {
+    let ai = (a as i32).clamp(-1, 1);
+    let bi = (b as i32).clamp(-1, 1);
+
+    #[cfg(target_arch = "aarch64")]
+    {
+        let out: i32;
+        // SAFETY: Pure register-to-register `cmp`, `csel`, and `neg` on 32-bit general-purpose W-registers.
+        unsafe {
+            core::arch::asm!(
+                "cmp {a:w}, {b:w}",
+                "csel {out:w}, {a:w}, {b:w}, lt",
+                "neg {out:w}, {out:w}",
+                a = in(reg) ai,
+                b = in(reg) bi,
+                out = lateout(reg) out,
+                options(pure, nomem, nostack),
+            );
+        }
+        return out as i8;
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        let mut out = ai;
+        // SAFETY: Pure register-to-register `cmp`, `cmovg`, and `neg` on 32-bit general-purpose registers.
+        unsafe {
+            core::arch::asm!(
+                "cmp {out:e}, {b:e}",
+                "cmovg {out:e}, {b:e}",
+                "neg {out:e}",
+                out = inout(reg) out,
+                b = in(reg) bi,
+                options(pure, nomem, nostack),
+            );
+        }
+        return out as i8;
+    }
+
+    #[allow(unreachable_code)]
+    (-(ai.min(bi)) as i8)
+}
+
 /// Bit-exact 1.58-bit (`{-1, 0, +1}`) integer GEMM dot-product (`felix_ternary_gemm_i32`).
-/// Computes `\sum_i acts[i] * trits[i]` with zero multiplications, zero branches, and zero floats.
+/// Uses 8-lane NEON (`vmovl_s8` + `vmlal_s16` + `vaddvq_s32`) on `aarch64` and 8-lane SSE2
+/// (`_mm_madd_epi16` `PMADDWD`) on `x86_64`, with a 4-way branchless scalar tail.
 #[inline(always)]
 pub fn felix_ternary_gemm_i32(acts: &[i16], trits: &[i8]) -> i32 {
     let n = acts.len().min(trits.len());
-    let mut acc0 = 0i32;
-    let mut acc1 = 0i32;
-    let mut acc2 = 0i32;
-    let mut acc3 = 0i32;
 
     #[inline(always)]
     const fn trit_mul_branchless(a: i16, t: i8) -> i32 {
@@ -78,16 +121,81 @@ pub fn felix_ternary_gemm_i32(acts: &[i16], trits: &[i8]) -> i32 {
     }
 
     let mut i = 0usize;
-    while i + 4 <= n {
-        acc0 = acc0.wrapping_add(trit_mul_branchless(acts[i], trits[i]));
-        acc1 = acc1.wrapping_add(trit_mul_branchless(acts[i + 1], trits[i + 1]));
-        acc2 = acc2.wrapping_add(trit_mul_branchless(acts[i + 2], trits[i + 2]));
-        acc3 = acc3.wrapping_add(trit_mul_branchless(acts[i + 3], trits[i + 3]));
-        i += 4;
+    let mut total: i32;
+
+    #[cfg(target_arch = "aarch64")]
+    {
+        use core::arch::aarch64::*;
+        // SAFETY: `aarch64` mandates NEON; pointer reads are bounded by `i + 8 <= n`.
+        unsafe {
+            let mut v_acc0 = vdupq_n_s32(0);
+            let mut v_acc1 = vdupq_n_s32(0);
+            let neg_one = vdup_n_s8(-1);
+            let pos_one = vdup_n_s8(1);
+            let acts_ptr = acts.as_ptr();
+            let trits_ptr = trits.as_ptr();
+
+            while i + 8 <= n {
+                let a8 = vld1q_s16(acts_ptr.add(i));
+                let t8_raw = vld1_s8(trits_ptr.add(i));
+                let t8 = vmin_s8(vmax_s8(t8_raw, neg_one), pos_one);
+                let t8_i16 = vmovl_s8(t8);
+
+                v_acc0 = vmlal_s16(v_acc0, vget_low_s16(a8), vget_low_s16(t8_i16));
+                v_acc1 = vmlal_s16(v_acc1, vget_high_s16(a8), vget_high_s16(t8_i16));
+                i += 8;
+            }
+            total = vaddvq_s32(vaddq_s32(v_acc0, v_acc1));
+        }
     }
-    let mut total = acc0
-        .wrapping_add(acc1)
-        .wrapping_add(acc2.wrapping_add(acc3));
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        use core::arch::x86_64::*;
+        // SAFETY: SSE2 is baseline on all `x86_64` targets; pointer reads are bounded by `i + 8 <= n`.
+        unsafe {
+            let mut v_acc = _mm_setzero_si128();
+            let acts_ptr = acts.as_ptr();
+            let trits_ptr = trits.as_ptr();
+
+            while i + 8 <= n {
+                let a8 = _mm_loadu_si128(acts_ptr.add(i) as *const __m128i);
+                let mut t_clamped = [0i16; 8];
+                for k in 0..8 {
+                    let tk = *trits_ptr.add(i + k);
+                    t_clamped[k] = (tk as i16).clamp(-1, 1);
+                }
+                let t8_i16 = _mm_loadu_si128(t_clamped.as_ptr() as *const __m128i);
+                let prod4 = _mm_madd_epi16(a8, t8_i16);
+                v_acc = _mm_add_epi32(v_acc, prod4);
+                i += 8;
+            }
+            let mut lanes = [0i32; 4];
+            _mm_storeu_si128(lanes.as_mut_ptr() as *mut __m128i, v_acc);
+            total = lanes[0]
+                .wrapping_add(lanes[1])
+                .wrapping_add(lanes[2].wrapping_add(lanes[3]));
+        }
+    }
+
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    {
+        let mut acc0 = 0i32;
+        let mut acc1 = 0i32;
+        let mut acc2 = 0i32;
+        let mut acc3 = 0i32;
+        while i + 4 <= n {
+            acc0 = acc0.wrapping_add(trit_mul_branchless(acts[i], trits[i]));
+            acc1 = acc1.wrapping_add(trit_mul_branchless(acts[i + 1], trits[i + 1]));
+            acc2 = acc2.wrapping_add(trit_mul_branchless(acts[i + 2], trits[i + 2]));
+            acc3 = acc3.wrapping_add(trit_mul_branchless(acts[i + 3], trits[i + 3]));
+            i += 4;
+        }
+        total = acc0
+            .wrapping_add(acc1)
+            .wrapping_add(acc2.wrapping_add(acc3));
+    }
+
     while i < n {
         total = total.wrapping_add(trit_mul_branchless(acts[i], trits[i]));
         i += 1;
@@ -459,8 +567,8 @@ pub fn build_canonical_mem8_recall_module(version: u32) -> Result<FelixPhoenixMo
     )
 }
 
-/// The 9 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7`).
-pub const SPARK_ARC_PACKAGES: [&str; 9] = [
+/// The 10 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_bench`).
+pub const SPARK_ARC_PACKAGES: [&str; 10] = [
     "felix_nand_tcb",
     "felix_front",
     "felix_type",
@@ -470,6 +578,7 @@ pub const SPARK_ARC_PACKAGES: [&str; 9] = [
     "felix_codegen",
     "phoenix_linker",
     "phoenix_vm",
+    "felix_bench",
 ];
 
 /// Summary of verifying the Ada/SPARK 2022 compiler arc in `ada/`.
@@ -607,5 +716,24 @@ mod tests {
         assert_eq!(score_v2, expected);
         assert_eq!(vm.hotswap_epoch, 2);
         assert_eq!(vm.active_module.version, 2);
+    }
+
+    #[test]
+    fn test_kleene_nand_asm_and_ada_spark_arc_10_packages() {
+        for a in [-1i8, 0, 1] {
+            for b in [-1i8, 0, 1] {
+                assert_eq!(felix_kleene_nand_trit_asm(a, b), -(a.min(b)));
+            }
+        }
+        let ada_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(|p| p.parent())
+            .expect("workspace root")
+            .join("ada");
+        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 10 Ada/SPARK packages");
+        assert_eq!(audit.packages_verified, 10);
+        assert_eq!(audit.total_files, 20);
+        assert_eq!(audit.spark_mode_on_count, 20);
+        assert_eq!(audit.no_heap_restrictions_count, 20);
     }
 }

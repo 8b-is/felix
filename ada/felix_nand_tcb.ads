@@ -1,5 +1,5 @@
 pragma SPARK_Mode (On);
-pragma Restrictions (No_Heap_Allocations);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
 pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
@@ -35,6 +35,13 @@ is
    -- SPQT Base-243 packed 5-trit byte in 0 .. 242
    type Base243_Byte is range 0 .. 242 with Size => 8;
    type Trit_Block_5 is array (0 .. 4) of Balanced_Trit;
+
+   -- Zero-heap bounded identifier / text slice for SPARK 2022
+   subtype Bounded_Name is String (1 .. 64);
+   Empty_Name : constant Bounded_Name := (others => ' ');
+
+   function To_Bounded_Name (S : String) return Bounded_Name;
+   function Trim_Name (N : Bounded_Name) return String;
 
    -- =========================================================================
    -- 2. Tier-1 Opcode Set (The TCB: exactly 6 instructions)
@@ -77,6 +84,8 @@ is
    -- =========================================================================
 
    type Instr_Word is new Unsigned_64;
+   type Instruction_Array is array (PC_Index) of Instr_Word;
+   type Reg_Index_Array is array (Natural range <>) of Reg_Index;
 
    -- Bit layout:
    -- [63..56] Opcode (8 bits)
@@ -107,7 +116,8 @@ is
       with
         Pre  => Cap = Cap_None or else Cap = Cap_IO or else Cap = Cap_Arena or else
                 Cap = Cap_M8 or else Cap = Cap_Net or else Cap = Cap_GPU,
-        Post => Encode_Instr'Result (Opcode_Shift .. 63) = Unsigned_64 (Op'Pos);
+        Post => Shift_Right (Unsigned_64 (Encode_Instr'Result), Opcode_Shift) =
+                Unsigned_64 (Tier1_Opcode'Pos (Op));
 
    function Decode_Opcode (I : Instr_Word) return Tier1_Opcode;
 
@@ -122,7 +132,7 @@ is
 
    function Ternary_Nand (A, B : Balanced_Trit) return Balanced_Trit
      with
-       Post => Ternary_Nand'Result = -Integer'Min (A, B);
+       Post => Integer (Ternary_Nand'Result) = -Integer'Min (Integer (A), Integer (B));
 
    -- =========================================================================
    -- 6. Interpreter State Machine
@@ -239,9 +249,5 @@ is
    -- 5. No integer overflow: Ternary_Nand, Ternary_Select, TGemm_Accumulate
    -- 6. Information flow: no secret-dependent branches in TCB
    -- 7. Termination: Run terminates within Max_Steps or Yields
-
-private
-   type Instruction_Array is array (PC_Index) of Instr_Word;
-   type Reg_Index_Array is array (Natural range <>) of Reg_Index;
 
 end Felix_Nand_TCB;
