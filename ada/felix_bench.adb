@@ -4,6 +4,7 @@ pragma Restrictions (No_Implicit_Heap_Allocations);
 pragma Restrictions (No_Exception_Propagation);
 
 with Ada.Text_IO; use Ada.Text_IO;
+with Felix_Tern; use Felix_Tern;
 with System.Machine_Code; use System.Machine_Code;
 
 package body Felix_Bench
@@ -238,6 +239,30 @@ is
       return Make_Result ("Wave Resonance (256)", Config.Iterations, Start_Cycles, End_Cycles);
    end Bench_Wave_Resonance;
 
+   function Bench_God_Of_Sun_Zeno (Config : Benchmark_Config) return Benchmark_Result is
+      P            : constant Integer_64 := 31;
+      Q            : constant Integer_64 := 32;
+      N            : Natural := 31;
+      T            : constant Balanced_Trit := -1;
+      Result_Val   : Boolean := False;
+      pragma Volatile (Result_Val);
+      Start_Cycles : Unsigned_64;
+      End_Cycles   : Unsigned_64;
+   begin
+      for I in 1 .. Config.Warmup_Runs loop
+         Result_Val := God_Of_Sun_Zeno_Holds (P, Q, N, T);
+      end loop;
+
+      Start_Cycles := Current_Cycles;
+      for I in 1 .. Config.Iterations loop
+         Result_Val := God_Of_Sun_Zeno_Holds (P, Q, N, T);
+         N := 31 + (I mod 2);
+      end loop;
+      End_Cycles := Current_Cycles;
+
+      return Make_Result ("GOD OF SUN (P/Q-n*t>P)", Config.Iterations, Start_Cycles, End_Cycles);
+   end Bench_God_Of_Sun_Zeno;
+
    function Run_All_Benchmarks (Config : Benchmark_Config := Default_Config)
       return Benchmark_Results
    is
@@ -250,28 +275,31 @@ is
       New_Line;
 
       Results (1) := Bench_Ternary_Nand (Config);
-      Put_Line ("  1/8: " & Trim_Name (Results (1).Name) & " ... " & Results (1).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  1/9: " & Trim_Name (Results (1).Name) & " ... " & Results (1).Cycles_Per_Op'Image & " ticks/op");
 
       Results (2) := Bench_Ternary_Nand_Vector (Config);
-      Put_Line ("  2/8: " & Trim_Name (Results (2).Name) & " ... " & Results (2).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  2/9: " & Trim_Name (Results (2).Name) & " ... " & Results (2).Cycles_Per_Op'Image & " ticks/op");
 
       Results (3) := Bench_Pack_Trit_Block_5 (Config);
-      Put_Line ("  3/8: " & Trim_Name (Results (3).Name) & " ... " & Results (3).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  3/9: " & Trim_Name (Results (3).Name) & " ... " & Results (3).Cycles_Per_Op'Image & " ticks/op");
 
       Results (4) := Bench_Unpack_Trit_Block_5 (Config);
-      Put_Line ("  4/8: " & Trim_Name (Results (4).Name) & " ... " & Results (4).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  4/9: " & Trim_Name (Results (4).Name) & " ... " & Results (4).Cycles_Per_Op'Image & " ticks/op");
 
       Results (5) := Bench_Ternary_Select (Config);
-      Put_Line ("  5/8: " & Trim_Name (Results (5).Name) & " ... " & Results (5).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  5/9: " & Trim_Name (Results (5).Name) & " ... " & Results (5).Cycles_Per_Op'Image & " ticks/op");
 
       Results (6) := Bench_TGemm (Config);
-      Put_Line ("  6/8: " & Trim_Name (Results (6).Name) & " ... " & Results (6).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  6/9: " & Trim_Name (Results (6).Name) & " ... " & Results (6).Cycles_Per_Op'Image & " ticks/op");
 
       Results (7) := Bench_TGemm_VPternLogD (Config);
-      Put_Line ("  7/8: " & Trim_Name (Results (7).Name) & " ... " & Results (7).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  7/9: " & Trim_Name (Results (7).Name) & " ... " & Results (7).Cycles_Per_Op'Image & " ticks/op");
 
       Results (8) := Bench_Wave_Resonance (Config);
-      Put_Line ("  8/8: " & Trim_Name (Results (8).Name) & " ... " & Results (8).Cycles_Per_Op'Image & " ticks/op");
+      Put_Line ("  8/9: " & Trim_Name (Results (8).Name) & " ... " & Results (8).Cycles_Per_Op'Image & " ticks/op");
+
+      Results (9) := Bench_God_Of_Sun_Zeno (Config);
+      Put_Line ("  9/9: " & Trim_Name (Results (9).Name) & " ... " & Results (9).Cycles_Per_Op'Image & " ticks/op");
 
       New_Line;
       return Results;

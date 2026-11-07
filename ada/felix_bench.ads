@@ -38,7 +38,7 @@ is
       Cache_Misses   : Unsigned_64 := 0;
    end record;
 
-   type Benchmark_Results is array (1 .. 8) of Benchmark_Result;
+   type Benchmark_Results is array (1 .. 9) of Benchmark_Result;
 
    function Bench_Ternary_Nand (Config : Benchmark_Config) return Benchmark_Result;
    function Bench_Ternary_Nand_Vector (Config : Benchmark_Config) return Benchmark_Result;
@@ -48,6 +48,7 @@ is
    function Bench_TGemm (Config : Benchmark_Config) return Benchmark_Result;
    function Bench_TGemm_VPternLogD (Config : Benchmark_Config) return Benchmark_Result;
    function Bench_Wave_Resonance (Config : Benchmark_Config) return Benchmark_Result;
+   function Bench_God_Of_Sun_Zeno (Config : Benchmark_Config) return Benchmark_Result;
 
    function Run_All_Benchmarks (Config : Benchmark_Config := Default_Config)
       return Benchmark_Results;
