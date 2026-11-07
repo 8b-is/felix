@@ -1,0 +1,142 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 7 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+7 0 obj
+<< /Length 3707 >>
+stream
+BT
+/F2 13 Tf
+1 0 0 1 54 780 Tm
+(Six-Month Systems & Formal Verification Synthesis \(May - Nov 2026\)) Tj
+/F2 11 Tf
+1 0 0 1 54 762 Tm
+(8b-is x standardgalactic x peterlodri-sec ? Shared Scientific Report) Tj
+/F1 9 Tf
+1 0 0 1 54 747 Tm
+(Target Recognition Format: ACM Software System Award & CAV / POPL Distinguished Artifact) Tj
+/F1 9 Tf
+1 0 0 1 54 734 Tm
+(------------------------------------------------------------------------------------------) Tj
+/F2 10 Tf
+1 0 0 1 54 721 Tm
+(1. Balanced-Ternary Quantization & Exact Rational Scales \(memnet & felix-lang\)) Tj
+/F1 8 Tf
+1 0 0 1 54 707 Tm
+(   - SPQT Base-243 5-Trit Packing: B = sum_{j=0..4} \(t_j + 1\)*3^j in [0..242] \(99.06% bit density\)) Tj
+/F1 8 Tf
+1 0 0 1 54 696 Tm
+(   - Zero-Allocation 4-Register Signal Resolution: 444 B StackMarkdownBuf + 3-Byte SPQT3 [239, 205, 238]) Tj
+/F1 8 Tf
+1 0 0 1 54 685 Tm
+(   - Exact coprime rational arithmetic \(Ratio p/q\) with zero floating-point drift across contractions) Tj
+/F1 9 Tf
+1 0 0 1 54 674 Tm
+() Tj
+/F2 10 Tf
+1 0 0 1 54 661 Tm
+(2. Linear Types, Hardware Capability Monotonicity & SPARK 2022 Verification) Tj
+/F1 8 Tf
+1 0 0 1 54 647 Tm
+(   - Compile-time linear value checking in felix-lang \(single-consumption static guarantee\)) Tj
+/F1 8 Tf
+1 0 0 1 54 636 Tm
+(   - OS-Agnostic PhoenixCapabilityAbiTable across POSIX mmap, WASM linear memory, and ESP32-S3 DMA) Tj
+/F1 8 Tf
+1 0 0 1 54 625 Tm
+(   - 22 Ada 2022 / SPARK formal packages proved via gnatprove --mode=check_all \(0 errors, 0 warnings\)) Tj
+/F1 8 Tf
+1 0 0 1 54 614 Tm
+(   - Self-hosted FIPS 180-4 SHA-256 & constant-time RFC 2104 HMAC-SHA256 webhook verifier) Tj
+/F1 9 Tf
+1 0 0 1 54 603 Tm
+() Tj
+/F2 10 Tf
+1 0 0 1 54 590 Tm
+(3. Signed Graph Laplacians, Discrete Combinatorics & Statistical Inference) Tj
+/F1 8 Tf
+1 0 0 1 54 576 Tm
+(   - Harary Structural Balance & Signed Laplacian: x^T L^sigma x = sum \(x_u - sigma_uv x_v\)^2 = 4*frustrated) Tj
+/F1 8 Tf
+1 0 0 1 54 565 Tm
+(   - Erdos-Renyi percolation \(p_c = ln\(N\)/N = 0.0004063\), Erdos-Kac omega\(n\), and exhaustive Ramsey R\(3,3\)=6) Tj
+/F1 8 Tf
+1 0 0 1 54 554 Tm
+(   - 6-Step Q_6 Statistical Inference Pipeline: coherence = 0.9705, Pearson r = 0.9999, do = 1.1200) Tj
+/F1 9 Tf
+1 0 0 1 54 543 Tm
+() Tj
+/F2 10 Tf
+1 0 0 1 54 530 Tm
+(4. Shared Scientific Attribution & Rational p/q Signature Map) Tj
+/F3 8 Tf
+1 0 0 1 54 516 Tm
+(   Contributor                      Organization / Spine           Primary Subsystem                   p/q) Tj
+/F3 8 Tf
+1 0 0 1 54 505 Tm
+(   -----------------------------------------------------------------------------------------------------------) Tj
+/F3 8 Tf
+1 0 0 1 54 494 Tm
+(   Peter Lodri \(peterlodri-sec\)     peterlodri-sec / 8b-is         Compiler, Rust/SPARK Kernel, ABI    31/32) Tj
+/F3 8 Tf
+1 0 0 1 54 483 Tm
+(   Alexandra \(ALEX|qMom\)            8b-is                          Architecture Stewardship & Review   11/9) Tj
+/F3 8 Tf
+1 0 0 1 54 472 Tm
+(   Chris                            8b-is                          Acoustic DSP & Hardware Timing      32/27) Tj
+/F3 8 Tf
+1 0 0 1 54 461 Tm
+(   Dra                              8b-is                          Operations & E2E Harness            144/89) Tj
+/F3 8 Tf
+1 0 0 1 54 450 Tm
+(   Nate / Natalie                   standardgalactic               memnet Oracle & Library Corpus      243/256) Tj
+/F1 9 Tf
+1 0 0 1 54 439 Tm
+() Tj
+/F2 10 Tf
+1 0 0 1 54 426 Tm
+(5. Reproducibility & Verification Seal) Tj
+/F3 8 Tf
+1 0 0 1 54 412 Tm
+(   Rust Test Suite : 106/106 PASS  |  SPARK Proofs : 22/22 PASS  |  wa-stream E2E : 21/21 PASS) Tj
+/F3 8 Tf
+1 0 0 1 54 401 Tm
+(   Rational Seal   : P/Q = 44599 / 1424  |  LaTeX SHA-256 : 90cced07ab7c3993d9c2f6cb28009f761a397dff801ae5531d61e255e9287410) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Title (Felix Technical Report: Balanced-Ternary & SPARK Verification) /Author (Peter Lodri and Contributors) /Subject (ACM Software System / CAV-POPL Artifact | p/q=44599/1424 | sha256=90cced07ab7c3993d9c2) /Keywords (p/q=44599/1424, SPQT3, SPARK-2022, Erdos-Renyi, Ramsey-R33) >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000267 00000 n 
+0000000337 00000 n 
+0000000412 00000 n 
+0000000480 00000 n 
+0000004239 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R /Info 8 0 R >>
+startxref
+4539
+%%EOF

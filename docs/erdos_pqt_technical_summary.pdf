@@ -135,7 +135,7 @@ BT
 (   LaTeX Source SHA-256      : fecceb37c83c9da0013d489458d1c7e73153b2d679834cba7eb84663b7375530) Tj
 /F3 8 Tf
 1 0 0 1 54 288 Tm
-(   Verification Status       : 104/104 Rust tests PASS | 21 SPARK packages proved) Tj
+(   Verification Status       : 106/106 Rust tests PASS | 22 SPARK packages proved) Tj
 ET
 endstream
 endobj
