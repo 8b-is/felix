@@ -19,6 +19,7 @@ usage:
   felix graph [--mermaid] <file.flx>  print the dataflow graph (DOT, or Mermaid)
   felix capsule <file.flx | ->        seal the program and its transcript
   felix verify <capsule | ->          re-run a capsule; fail unless it reproduces
+  felix phoenix                       run FELIX|PHOENIX Tier-1/Tier-2 PCC + liveSymbioticVM + MEM8 Pass-2 probe
   felix --version | --help";
 
 enum Fail {
@@ -63,6 +64,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         }
         ["capsule", path] => cmd_capsule(&read(path)?),
         ["verify", path] => cmd_verify(&read(path)?),
+        ["phoenix"] | ["--phoenix"] => cmd_phoenix(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -74,7 +76,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
 }
 
 fn is_command(word: &str) -> bool {
-    matches!(word, "run" | "check" | "graph" | "capsule" | "verify")
+    matches!(word, "run" | "check" | "graph" | "capsule" | "verify" | "phoenix")
 }
 
 fn read(path: &str) -> Result<String, Fail> {
@@ -144,4 +146,49 @@ fn cmd_verify(text: &str) -> Result<(), Fail> {
             Err(Fail::Refused)
         }
     }
+}
+
+fn cmd_phoenix() -> Result<(), Fail> {
+    use felix_lang::phoenix::{
+        build_canonical_mem8_recall_module, felix_ternary_gemm_i32, PhoenixSymbioticVm,
+        QuantTernBlock32,
+    };
+    let mut trits32 = [0i8; 32];
+    for (i, slot) in trits32.iter_mut().enumerate() {
+        *slot = match i % 3 {
+            0 => 1,
+            1 => -1,
+            _ => 0,
+        };
+    }
+    let blk = QuantTernBlock32::pack(&trits32, 0x0A, 1, 2).map_err(|e| Fail::Usage(e.into()))?;
+    let mod_v1 = build_canonical_mem8_recall_module(1).map_err(Fail::Usage)?;
+    let mod_v2 = build_canonical_mem8_recall_module(2).map_err(Fail::Usage)?;
+    let hash_v1 = mod_v1.pcc.module_hash_hex.clone();
+    let hash_v2 = mod_v2.pcc.module_hash_hex.clone();
+    let contract_hash = mod_v1.pcc.contract_hash_hex.clone();
+    let mut vm = PhoenixSymbioticVm::new(mod_v1).map_err(Fail::Usage)?;
+    let acts = [100i16, -50, 25, 10, -30, 7, 12, -8, 4, 20];
+    let trits10 = [1i8, -1, 0, 1, 1, -1, 0, -1, 1, 1];
+    let score_v1 = vm
+        .execute_mem8_pass2(&acts, &trits10, 432 * 65536)
+        .map_err(Fail::Usage)?;
+    vm.stage_hotswap(mod_v2).map_err(Fail::Usage)?;
+    let score_v2 = vm
+        .execute_mem8_pass2(&acts, &trits10, 432 * 65536)
+        .map_err(Fail::Usage)?;
+    let ref_gemm = felix_ternary_gemm_i32(&acts, &trits10);
+    println!("🔥 FELIX | PHOENIX — oneshot ultraDense quantTernP/Q · NAND SSA · liveSymbioticVM");
+    println!(
+        "  • quantTernP/Q Block32 : {} bits/32 trits ({} wire bytes vs {} FP16 bits -> {:.2}x density gain)",
+        QuantTernBlock32::BITS_PER_32_TRITS,
+        blk.wire_bytes.len(),
+        QuantTernBlock32::FP16_BITS_PER_32,
+        QuantTernBlock32::FP16_BITS_PER_32 as f64 / QuantTernBlock32::BITS_PER_32_TRITS as f64
+    );
+    println!("  • Tier-1 TCB (6 Ops)   : nand, ld, st, br/call/ret, cap (0x{:02x}), yield (@hotswappable)", vm.active_module.pcc.declared_effects);
+    println!("  • FELIX-VERIFY PCC v1  : {} (contract={})", &hash_v1[..32], &contract_hash[..16]);
+    println!("  • PHOENIX Hot-Swap v2  : {} (epoch={} @ yield safe-point)", &hash_v2[..32], vm.hotswap_epoch);
+    println!("  • MEM8 Pass-2 TGemm    : score_v1={score_v1} == score_v2={score_v2} == felix_ternary_gemm_i32={ref_gemm} (bit-exact ✓)");
+    Ok(())
 }

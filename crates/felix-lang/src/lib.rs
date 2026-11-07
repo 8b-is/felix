@@ -37,6 +37,7 @@ pub mod eval;
 pub mod graph;
 pub mod lexer;
 pub mod parser;
+pub mod phoenix;
 pub mod ratio;
 pub mod typeck;
 
