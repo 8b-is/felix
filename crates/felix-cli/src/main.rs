@@ -150,8 +150,8 @@ fn cmd_verify(text: &str) -> Result<(), Fail> {
 
 fn cmd_phoenix() -> Result<(), Fail> {
     use felix_lang::phoenix::{
-        build_canonical_mem8_recall_module, felix_ternary_gemm_i32, PhoenixSymbioticVm,
-        QuantTernBlock32,
+        build_canonical_mem8_recall_module, felix_ternary_gemm_i32, verify_ada_spark_arc,
+        PhoenixSymbioticVm, QuantTernBlock32,
     };
     let mut trits32 = [0i8; 32];
     for (i, slot) in trits32.iter_mut().enumerate() {
@@ -190,5 +190,27 @@ fn cmd_phoenix() -> Result<(), Fail> {
     println!("  • FELIX-VERIFY PCC v1  : {} (contract={})", &hash_v1[..32], &contract_hash[..16]);
     println!("  • PHOENIX Hot-Swap v2  : {} (epoch={} @ yield safe-point)", &hash_v2[..32], vm.hotswap_epoch);
     println!("  • MEM8 Pass-2 TGemm    : score_v1={score_v1} == score_v2={score_v2} == felix_ternary_gemm_i32={ref_gemm} (bit-exact ✓)");
+
+    let ada_candidates = [
+        std::path::PathBuf::from("ada"),
+        std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../ada")),
+    ];
+    for cand in &ada_candidates {
+        if cand.is_dir() {
+            if let Ok(audit) = verify_ada_spark_arc(cand) {
+                println!(
+                    "  • Ada/SPARK 2022 Arc   : {}/9 packages ({} files, {} B, SPARK_Mode={}, No_Heap={}, contracts={}, sha256={})",
+                    audit.packages_verified,
+                    audit.total_files,
+                    audit.total_bytes,
+                    audit.spark_mode_on_count,
+                    audit.no_heap_restrictions_count,
+                    audit.pre_post_contracts_count,
+                    &audit.arc_sha256_hex[..24]
+                );
+            }
+            break;
+        }
+    }
     Ok(())
 }

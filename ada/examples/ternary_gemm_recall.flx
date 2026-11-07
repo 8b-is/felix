@@ -1,0 +1,79 @@
+# FELIX Example: Exact p/q Ternary GEMM Recall Kernel
+#
+# This module demonstrates the MEM8 two-pass recall:
+#   Pass 1: recall_episodes (wave resonance)
+#   Pass 2: synthesize_contextual (ternary GEMM coverage select)
+#
+# Run: felix examples/ternary_gemm_recall.flx
+
+module mem8.recall
+
+import felix.tgemm          -- Dense ternary GEMM primitive
+import phoenix.cap          -- Capability invocation
+
+-- quantTernP/Q tensor literal: P trits + Q block scales
+-- 10 trits, 4 scales (one per 32-trit block)
+let W : qtensor<10, 4> = qtensor {
+    p = [ +1, -1,  0, +1,  0,  -1, +1, -1,  0, +1 ],
+    q = [ 0.5, 1.0, 2.0, 0.5 ]   -- E2M1 scales: 1/2, 1, 2, 1/2
+}
+
+-- Linear, refinement-typed function
+-- acts: 10 i16 activations from Pass 1
+-- q:    10 rational scales from Pass 1
+-- returns: i32 accumulator from ternary GEMM
+fn pass2(acts: &[i16; 10], q: &qvector<10>) -> i32
+    requires acts.len() == 10
+    requires q.len() == 10
+    requires forall i: 0 <= i < 10 ==> q[i] > 0
+    ensures  result == felix_ternary_gemm_i32(acts, unpack(q))
+    effects { cap.arena }
+{
+    tgemm(acts, q)              -- Lowers to NAND + dense extension (vpternlogd + vpmaddwd)
+}
+
+-- Capability-gated hot-swap entry for MEM8 persona
+@hotswappable
+fn synthesize(episodes: &[Episode], query: &str) -> Answer
+    requires episodes.len() > 0
+    requires query.len() > 0
+    ensures  result.text.len() > 0
+    effects { cap.io, cap.arena, cap.m8 }
+{
+    let hits = recall(episodes, query, 8);   -- Pass 1: wave resonance
+    pass2(hits.acts(), hits.q())             -- Pass 2: ternary GEMM coverage select
+}
+
+-- Data types
+type Episode = struct {
+    id: u64,
+    text: str,
+    acts: [i16; 10],
+    q: qvector<10>,
+};
+
+type qvector<N: usize> = [Exact_Ratio; N];
+
+type Answer = struct {
+    text: str,
+    confidence: Exact_Ratio,
+};
+
+-- Builtin recall (Pass 1) - implemented in host via cap.m8
+fn recall(episodes: &[Episode], query: &str, k: u8) -> Hits
+    effects { cap.m8 };
+
+type Hits = struct {
+    acts: [i16; 10],
+    q: qvector<10>,
+};
+
+-- Entry point for CLI
+fn main() -> i32
+    effects { cap.io }
+{
+    print("MEM8 Ternary GEMM Recall Kernel");
+    print("Layer: #69,636");
+    print("ABI: MachineSunUnityCoreAbi64B");
+    0
+}

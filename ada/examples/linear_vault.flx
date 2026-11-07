@@ -1,0 +1,120 @@
+# FELIX Example: Linear Types + Capability Effect Rows
+#
+# Demonstrates:
+#   - linear let / consume (π = 1)
+#   - Effect rows (cap.io, cap.arena, cap.m8)
+#   - Refinement types (requires/ensures)
+#   - Vault ownership handles
+#
+# Run: felix examples/linear_vault.flx
+
+module demo.linear_vault
+
+import phoenix.cap
+
+-- Vault is a linear ownership handle (π = 1)
+-- Must be consumed exactly once, never copied or leaked
+
+fn create_vault() -> Vault
+    effects { cap.arena }
+{
+    new_vault()   -- Builtin: returns fresh ownership handle
+}
+
+fn use_vault(v: Vault) -> i32
+    requires v.is_valid()
+    ensures  result >= 0
+    effects { cap.arena }
+{
+    -- Vault consumed here (linear, π = 1)
+    consume(v);   -- Must consume exactly once
+    42
+}
+
+fn vault_example() -> i32
+    effects { cap.arena }
+{
+    -- Linear binding: must be consumed exactly once
+    linear let v = create_vault();
+
+    -- This would be a compile error: linear value used twice
+    -- let x = use_vault(v);
+    -- let y = use_vault(v);  -- ERROR: double use of linear 'v'
+
+    -- Correct: consume exactly once
+    use_vault(v)  -- v consumed here, scope exits cleanly (π = 1 satisfied)
+}
+
+-- Effect row composition: caller must have ⊇ callee's effects
+fn write_file(path: &str, data: &[u8]) -> Result<(), Error>
+    requires path.len() > 0
+    ensures  result.is_ok() ==> data.len() == file_size(path)
+    effects { cap.io, cap.arena }  -- Needs IO + arena
+{
+    -- Implementation uses cap.io
+    0  -- stub
+}
+
+fn read_file(path: &str) -> Result<Vec<u8>, Error>
+    requires path.len() > 0
+    effects { cap.io }
+{
+    -- Implementation uses cap.io
+    vec![]  -- stub
+}
+
+-- Function with cap.io can call functions with cap.io
+fn copy_file(src: &str, dst: &str) -> Result<(), Error>
+    requires src.len() > 0 && dst.len() > 0
+    effects { cap.io, cap.arena }  -- Union of callee effects
+{
+    let data = read_file(src)?;      -- cap.io
+    write_file(dst, &data)?;         -- cap.io + cap.arena
+    Ok(())
+}
+
+-- Error: function without cap.io cannot call cap.io function
+fn no_io_allowed() -> i32
+    effects { cap.arena }  -- No cap.io!
+{
+    -- This would be a compile error:
+    -- let _ = read_file("test.txt");  -- ERROR: cap.io not in effect row
+    0
+}
+
+-- Refinement types with exact p/q
+fn divide_exact(a: i64, b: i64) -> Exact_Ratio
+    requires b != 0
+    ensures  result == Exact_Ratio::new(a, b)
+{
+    Exact_Ratio::new(a, b)  -- Exact p/q, never rounded
+}
+
+fn scale_by_ratio(x: i32, r: Exact_Ratio) -> i32
+    requires r > 0
+    ensures  result == (x * r.numerator()) / r.denominator()
+{
+    (x * r.numerator() as i32) / r.denominator() as i32
+}
+
+fn main() -> i32
+    effects { cap.io, cap.arena }
+{
+    print("Linear Types + Capability Effect Rows Demo");
+
+    -- Linear vault example
+    let result = vault_example();
+    print("Vault consumed correctly: ", result);
+
+    -- Exact p/q arithmetic
+    let ratio = divide_exact(22, 7);
+    print("22/7 = ", ratio);
+
+    let scaled = scale_by_ratio(100, ratio);
+    print("100 * 22/7 = ", scaled);
+
+    -- Effect row composition
+    let _ = copy_file("src.txt", "dst.txt");
+
+    0
+}

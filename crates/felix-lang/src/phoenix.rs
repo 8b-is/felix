@@ -459,6 +459,80 @@ pub fn build_canonical_mem8_recall_module(version: u32) -> Result<FelixPhoenixMo
     )
 }
 
+/// The 9 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7`).
+pub const SPARK_ARC_PACKAGES: [&str; 9] = [
+    "felix_nand_tcb",
+    "felix_front",
+    "felix_type",
+    "felix_tern",
+    "felix_nand",
+    "felix_verify",
+    "felix_codegen",
+    "phoenix_linker",
+    "phoenix_vm",
+];
+
+/// Summary of verifying the Ada/SPARK 2022 compiler arc in `ada/`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SparkArcAudit {
+    pub packages_verified: usize,
+    pub total_files: usize,
+    pub total_bytes: usize,
+    pub spark_mode_on_count: usize,
+    pub no_heap_restrictions_count: usize,
+    pub pre_post_contracts_count: usize,
+    pub arc_sha256_hex: String,
+}
+
+/// Audits the 9 Ada/SPARK packages (`.ads` + `.adb`) in `ada_dir`, checking `pragma SPARK_Mode (On);`,
+/// `pragma Restrictions (No_Heap_Allocations);`, and `Pre`/`Post` contracts, and computing a deterministic
+/// SHA-256 seal over the entire compiler arc.
+pub fn verify_ada_spark_arc(ada_dir: &std::path::Path) -> Result<SparkArcAudit, String> {
+    let mut total_bytes = 0usize;
+    let mut spark_mode_on_count = 0usize;
+    let mut no_heap_restrictions_count = 0usize;
+    let mut pre_post_contracts_count = 0usize;
+    let mut concat = Vec::new();
+
+    for pkg in SPARK_ARC_PACKAGES {
+        for ext in ["ads", "adb"] {
+            let path = ada_dir.join(format!("{pkg}.{ext}"));
+            let content = std::fs::read_to_string(&path)
+                .map_err(|e| format!("missing Ada/SPARK unit {}: {e}", path.display()))?;
+            if !content.contains("pragma SPARK_Mode (On);") {
+                return Err(format!(
+                    "{} lacks `pragma SPARK_Mode (On);`",
+                    path.display()
+                ));
+            }
+            spark_mode_on_count += 1;
+            if content.contains("No_Heap_Allocations") {
+                no_heap_restrictions_count += 1;
+            }
+            pre_post_contracts_count +=
+                content.matches("Pre ").count() + content.matches("Post =>").count() + content.matches("Post ").count();
+            total_bytes += content.len();
+            concat.extend_from_slice(format!("--- {pkg}.{ext} ---\n").as_bytes());
+            concat.extend_from_slice(content.as_bytes());
+        }
+    }
+
+    let arc_sha256_hex: String = memnet::sha256(&concat)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+
+    Ok(SparkArcAudit {
+        packages_verified: SPARK_ARC_PACKAGES.len(),
+        total_files: SPARK_ARC_PACKAGES.len() * 2,
+        total_bytes,
+        spark_mode_on_count,
+        no_heap_restrictions_count,
+        pre_post_contracts_count,
+        arc_sha256_hex,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
