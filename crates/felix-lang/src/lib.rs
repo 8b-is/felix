@@ -36,6 +36,7 @@ pub mod capsule;
 pub mod check;
 pub mod codegen_v2;
 pub mod diag;
+pub mod erdos_pqt_omniversal;
 pub mod esp32s3_espnow_mesh;
 pub mod eval;
 pub mod felix_codegen_jit;

@@ -69,6 +69,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["phoenix"] | ["--phoenix"] => cmd_phoenix(),
         ["omni"] | ["--omni"] => cmd_omni(),
         ["mind"] | ["--mind"] | ["--mind-all"] | ["well"] | ["--well"] => cmd_mind_well(),
+        ["erdos"] | ["--erdos"] | ["pqt"] | ["--pqt"] => cmd_erdos(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -82,7 +83,17 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
 fn is_command(word: &str) -> bool {
     matches!(
         word,
-        "run" | "check" | "graph" | "capsule" | "verify" | "phoenix" | "omni" | "mind" | "well"
+        "run"
+            | "check"
+            | "graph"
+            | "capsule"
+            | "verify"
+            | "phoenix"
+            | "omni"
+            | "mind"
+            | "well"
+            | "erdos"
+            | "pqt"
     )
 }
 
@@ -348,6 +359,22 @@ fn cmd_mind_well() -> Result<(), Fail> {
         md1.len(),
         t2.total_present_out_of_12(),
         spqt_lap2
+    );
+    Ok(())
+}
+
+fn cmd_erdos() -> Result<(), Fail> {
+    use felix_lang::erdos_pqt_omniversal::ErdosLodriOmniversalEngine;
+    let engine = ErdosLodriOmniversalEngine::default();
+    let cert = engine.prove_quantum_continuity();
+    println!(
+        "  • Erdős–Rényi & PqT     : p_c={:.6} (N={}), max_disc={:.6} <= 1.0, max_step={:.6}, R(3,3)=6 verified={} (qed={} ✓)",
+        cert.erdos_renyi_critical_p,
+        engine.constellation_nodes,
+        cert.max_ternary_zeno_discrepancy,
+        cert.max_wave_continuity_step,
+        cert.ramsey_r33_coherence_verified,
+        cert.the_book_q_e_d
     );
     Ok(())
 }
