@@ -119,4 +119,19 @@ is
    procedure Annotate_Dense (M : in out Tern_Module);
    function Verify_Dense_Annotations (M : Tern_Module) return Boolean;
 
+   -- -------------------------------------------------------------------------
+   -- ULTRA-ZENO GOD OF SUN Law: P/Q - n*t > P
+   -- -------------------------------------------------------------------------
+
+   function God_Of_Sun_Zeno_Holds
+     (P : Integer_64;
+      Q : Integer_64;
+      N : Natural;
+      T : Balanced_Trit)
+      return Boolean
+     with
+       Pre  => Q >= 1 and then Q <= 1_000_000 and then abs (P) <= 1_000_000 and then N <= 1_000_000,
+       Post => God_Of_Sun_Zeno_Holds'Result =
+                 ((P - Q * Integer_64 (N) * Integer_64 (T)) > P * Q);
+
 end Felix_Tern;

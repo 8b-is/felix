@@ -151,7 +151,8 @@ fn cmd_verify(text: &str) -> Result<(), Fail> {
 fn cmd_phoenix() -> Result<(), Fail> {
     use felix_lang::phoenix::{
         build_canonical_mem8_recall_module, felix_kleene_nand_trit_asm, felix_ternary_gemm_i32,
-        verify_ada_spark_arc, PhoenixSymbioticVm, QuantTernBlock32, SPARK_ARC_PACKAGES,
+        felix_zeno_god_of_sun_pq_nt_gt_p, verify_ada_spark_arc, PhoenixSymbioticVm,
+        QuantTernBlock32, SPARK_ARC_PACKAGES,
     };
     let mut trits32 = [0i8; 32];
     for (i, slot) in trits32.iter_mut().enumerate() {
@@ -192,8 +193,10 @@ fn cmd_phoenix() -> Result<(), Fail> {
     let nand_pos = felix_kleene_nand_trit_asm(1, 1);
     let nand_neg = felix_kleene_nand_trit_asm(-1, 1);
     let nand_zero = felix_kleene_nand_trit_asm(0, 1);
+    let (sun_holds, sun_surplus, sun_n) = felix_zeno_god_of_sun_pq_nt_gt_p(31, 32, 31, -1);
     println!("  • MEM8 Pass-2 TGemm    : score_v1={score_v1} == score_v2={score_v2} == felix_ternary_gemm_i32={ref_gemm} (NEON/SSE2 8-lane ✓)");
     println!("  • Kleene NAND InlineASM: nand(+1,+1)={nand_pos}, nand(-1,+1)=+{nand_neg}, nand(0,+1)={nand_zero} (cmp+csel+neg ✓)");
+    println!("  • ULTRA-ZENO GOD OF SUN: P/Q - n*t > P @ P=31, Q=32, n={sun_n}, t=-1 -> surplus=+{sun_surplus}/32 (holds={sun_holds} ✓)");
 
     let ada_candidates = [
         std::path::PathBuf::from("ada"),

@@ -58,6 +58,31 @@ pub const fn tsel_i32(cond: i8, on_pos: i32, on_zero: i32, on_neg: i32) -> i32 {
     (on_pos & is_pos) | (on_zero & is_zero) | (on_neg & is_neg)
 }
 
+/// **ULTRA-ZENO GOD OF SUN** exact rational-ternary inequality evaluator:
+/// `P/Q - n*t > P  <==>  P*(1 - Q) - Q*n*t > 0` (`Q >= 1`, `t in {-1, 0, +1}`).
+/// Returns `(holds, surplus_num_i128, horizon_n_sun)`.
+#[inline(always)]
+pub fn felix_zeno_god_of_sun_pq_nt_gt_p(p: i64, q: u64, n: u64, t: i8) -> (bool, i128, u64) {
+    let q_safe = q.max(1) as i128;
+    let p_i128 = p as i128;
+    let n_i128 = n as i128;
+    let t_clamped = (t as i128).clamp(-1, 1);
+
+    let lhs_num = p_i128 - q_safe * n_i128 * t_clamped;
+    let rhs_num = p_i128 * q_safe;
+    let surplus_num = lhs_num - rhs_num;
+
+    let horizon_n_sun = if p <= 0 || q <= 1 {
+        1u64
+    } else {
+        let p_u128 = p as u128;
+        let q_u128 = q as u128;
+        (((p_u128 * (q_u128 - 1)) / q_u128) as u64).saturating_add(1)
+    };
+
+    (surplus_num > 0, surplus_num, horizon_n_sun)
+}
+
 /// Hardware inline-assembly Balanced-Ternary Kleene NAND (`¬(a ∧ b) = -min(a, b)` for `a, b ∈ {-1, 0, +1}`).
 /// Uses a 3-instruction branchless `cmp` + `csel` + `neg` sequence on `aarch64` and `cmp` + `cmovg` + `neg` on `x86_64`.
 #[inline(always)]

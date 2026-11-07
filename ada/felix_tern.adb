@@ -86,4 +86,17 @@ is
       return True;
    end Verify_Dense_Annotations;
 
+   function God_Of_Sun_Zeno_Holds
+     (P : Integer_64;
+      Q : Integer_64;
+      N : Natural;
+      T : Balanced_Trit)
+      return Boolean
+   is
+      Lhs_Num : constant Integer_64 := P - Q * Integer_64 (N) * Integer_64 (T);
+      Rhs_Num : constant Integer_64 := P * Q;
+   begin
+      return Lhs_Num > Rhs_Num;
+   end God_Of_Sun_Zeno_Holds;
+
 end Felix_Tern;
