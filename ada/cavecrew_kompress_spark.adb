@@ -44,4 +44,10 @@ is
       return Integer_64 (Trit) * Act * Ultra_Waiyan_Harmonic;
    end Ultra_Waiyan_Scale_Act;
 
+   function Div3_U8_Fast (V : Base243_Byte) return Unsigned_8 is
+      Prod : constant Unsigned_16 := Unsigned_16 (V) * 171;
+   begin
+      return Unsigned_8 (Shift_Right (Prod, 9));
+   end Div3_U8_Fast;
+
 end Cavecrew_Kompress_Spark;

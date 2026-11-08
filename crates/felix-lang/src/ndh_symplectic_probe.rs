@@ -114,20 +114,32 @@ pub const fn symplectic_omega_80(u: &SymplecticState80, v: &SymplecticState80) -
 }
 
 /// Exact integer ternary dot product `sum_j w_row[j] * x[j]` where `w_row[j] in {-1, 0, +1}`.
-/// Uses pure integer addition and subtraction (`0` multiplications, `0` floats).
-#[inline]
+/// Unrolled 8-wide (`40 = 5 * 8`) across 4 independent accumulators with `#[inline(always)]`
+/// for branchless auto-vectorization (`0` branches, `0` floats).
+#[inline(always)]
 pub const fn ternary_dot_40(w_row: &[i8; HALF_DIM_40], x: &[i64; HALF_DIM_40]) -> i64 {
-    let mut acc = 0i64;
+    let mut acc0 = 0i64;
+    let mut acc1 = 0i64;
+    let mut acc2 = 0i64;
+    let mut acc3 = 0i64;
     let mut j = 0usize;
-    while j < HALF_DIM_40 {
-        match w_row[j] {
-            1 => acc = acc.wrapping_add(x[j]),
-            -1 => acc = acc.wrapping_sub(x[j]),
-            _ => {}
-        }
-        j += 1;
+    while j + 8 <= HALF_DIM_40 {
+        let p0 = (w_row[j] as i64).wrapping_mul(x[j]);
+        let p1 = (w_row[j + 1] as i64).wrapping_mul(x[j + 1]);
+        let p2 = (w_row[j + 2] as i64).wrapping_mul(x[j + 2]);
+        let p3 = (w_row[j + 3] as i64).wrapping_mul(x[j + 3]);
+        let p4 = (w_row[j + 4] as i64).wrapping_mul(x[j + 4]);
+        let p5 = (w_row[j + 5] as i64).wrapping_mul(x[j + 5]);
+        let p6 = (w_row[j + 6] as i64).wrapping_mul(x[j + 6]);
+        let p7 = (w_row[j + 7] as i64).wrapping_mul(x[j + 7]);
+        acc0 = acc0.wrapping_add(p0.wrapping_add(p4));
+        acc1 = acc1.wrapping_add(p1.wrapping_add(p5));
+        acc2 = acc2.wrapping_add(p2.wrapping_add(p6));
+        acc3 = acc3.wrapping_add(p3.wrapping_add(p7));
+        j += 8;
     }
-    acc
+    acc0.wrapping_add(acc1)
+        .wrapping_add(acc2.wrapping_add(acc3))
 }
 
 /// Deliverable 1A: 80-dimensional Exact Integer Symplectic Canonical Shear Operator.

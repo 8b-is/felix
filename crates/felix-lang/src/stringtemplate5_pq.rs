@@ -118,6 +118,7 @@ impl St5Value {
             (Self::RatioPq(r), "numer") => r.numer().to_string(),
             (Self::RatioPq(r), "denom") => r.denom().to_string(),
             (Self::RatioPq(r), "q8") => synthesize_q8_multiply_shift(*r, var_name),
+            (Self::RatioPq(r), "ultra_tweak") => synthesize_pq_ultra_tweak(*r, var_name),
             (Self::RatioPq(r), "shift_add") => synthesize_dyadic_shift_add(*r, var_name),
             (Self::RatioPq(r), "ada_shift") => synthesize_ada_spark_shift_add(*r, var_name),
             (Self::RatioPq(r), "prolog_expr") => synthesize_prolog_shift_add(*r, var_name),
@@ -163,6 +164,26 @@ pub fn synthesize_q8_multiply_shift(r: Ratio, var: &str) -> String {
     let q = r.denom().max(1);
     let q8_mult = (p * 256 + (q / 2)) / q;
     format!("(({var} * {q8_mult}) >> 8)")
+}
+
+/// Synthesizes an `ultraTweak` division-free integer expression for `var * (p/q)`:
+/// - Dyadic denominators (`q = 2^k`): multiplier-free shift-and-add/sub via [`synthesize_dyadic_shift_add`].
+/// - `1/3` (`p = 1, q = 3`): Q9 Granlund-Montgomery Base-3 reciprocal `((var * 171) >> 9)`.
+/// - General odd/non-dyadic `p/q`: Q16 Granlund-Montgomery reciprocal `((var * M_q16) >> 16)`.
+pub fn synthesize_pq_ultra_tweak(r: Ratio, var: &str) -> String {
+    let p = r.numer();
+    let q = r.denom();
+    if p <= 0 || q <= 0 {
+        return "0".to_string();
+    }
+    if (q as u64).is_power_of_two() {
+        return synthesize_dyadic_shift_add(r, var);
+    }
+    if p == 1 && q == 3 {
+        return format!("(({var} * 171) >> 9)");
+    }
+    let m_q16 = r.q16_reciprocal_multiplier();
+    format!("(({var} * {m_q16}) >> 16)")
 }
 
 /// Decomposes a positive dyadic rational `p / 2^k` into a pure multiplier-free shift-and-add expression
@@ -1113,6 +1134,14 @@ mod tests {
         assert_eq!(
             synthesize_dyadic_shift_add(Ratio::new(1000, 1).unwrap(), "toa"),
             "(toa << 10) - (toa << 4) - (toa << 3)"
+        );
+        assert_eq!(
+            synthesize_pq_ultra_tweak(Ratio::new(1, 3).unwrap(), "v"),
+            "((v * 171) >> 9)"
+        );
+        assert_eq!(
+            synthesize_pq_ultra_tweak(Ratio::new(2, 3).unwrap(), "v"),
+            "((v * 43691) >> 16)"
         );
     }
 

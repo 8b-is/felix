@@ -27,6 +27,7 @@
 //!      (`3^6 = 729`) = `36,450x` harmonic gain with branchless inline ternary contraction.
 
 use crate::omni_escanor_zeno_scheduler::{escanor_solar_gain, SolarPhylogeneticRung};
+use crate::ratio::divmod3_u8_fast;
 
 /// Seed timestamp string (`2026.NOV 8TH 10:51AM` EST).
 pub const SEED_TIMESTAMP_ISO: &str = "2026-11-08T10:51:00-05:00";
@@ -137,39 +138,93 @@ pub const fn pack_5trits_base243_inline(trits: [i8; 5]) -> u8 {
     d0 + 3 * d1 + 9 * d2 + 27 * d3 + 81 * d4
 }
 
-/// Unpacks a Base-243 byte (`0..=242`) back into 5 balanced trits (`{-1, 0, +1}`) with `#[inline(always)]`.
+/// Unpacks a Base-243 byte (`0..=242`) into 5 balanced trits (`{-1, 0, +1}`) using the
+/// Granlund-Montgomery Q9 reciprocal [`divmod3_u8_fast`] (`(v * 171) >> 9`, `0` divisions).
+#[inline(always)]
+pub const fn unpack_5trits_base243_mulshift(byte: u8) -> Option<[i8; 5]> {
+    if byte >= 243 {
+        return None;
+    }
+    let (v1, r0) = divmod3_u8_fast(byte);
+    let (v2, r1) = divmod3_u8_fast(v1);
+    let (v3, r2) = divmod3_u8_fast(v2);
+    let (v4, r3) = divmod3_u8_fast(v3);
+    Some([
+        (r0 as i8) - 1,
+        (r1 as i8) - 1,
+        (r2 as i8) - 1,
+        (r3 as i8) - 1,
+        (v4 as i8) - 1,
+    ])
+}
+
+/// Compile-time 243-entry Base-243 -> 5-trit lookup table (`243 * 5 = 1,215 bytes`, fits in 19 L1 cache lines).
+pub const BASE243_UNPACK_LUT: [[i8; 5]; 243] = {
+    let mut lut = [[0i8; 5]; 243];
+    let mut b = 0usize;
+    while b < 243 {
+        if let Some(five) = unpack_5trits_base243_mulshift(b as u8) {
+            lut[b] = five;
+        }
+        b += 1;
+    }
+    lut
+};
+
+/// Unpacks a Base-243 byte (`0..=242`) back into 5 balanced trits (`{-1, 0, +1}`) with `#[inline(always)]`
+/// via an $O(1)$ zero-division lookup in [`BASE243_UNPACK_LUT`].
 #[inline(always)]
 pub const fn unpack_5trits_base243_inline(byte: u8) -> Option<[i8; 5]> {
     if byte >= 243 {
         return None;
     }
-    let mut v = byte;
-    let d0 = (v % 3) as i8 - 1;
-    v /= 3;
-    let d1 = (v % 3) as i8 - 1;
-    v /= 3;
-    let d2 = (v % 3) as i8 - 1;
-    v /= 3;
-    let d3 = (v % 3) as i8 - 1;
-    v /= 3;
-    let d4 = (v % 3) as i8 - 1;
-    Some([d0, d1, d2, d3, d4])
+    Some(BASE243_UNPACK_LUT[byte as usize])
 }
 
-/// Ultra Waiyan Mode `#[inline(always)]` branchless balanced-ternary dot product + harmonic gain.
+/// Ultra Waiyan Mode `#[inline(always)]` 8-lane unrolled branchless balanced-ternary dot product + harmonic gain.
 ///
-/// Computes `(sum_{i} trits[i] * acts[i]) * ULTRA_WAIYAN_HARMONIC` (`36,450x`) with zero branches
-/// and zero floating-point operations.
+/// Computes `(sum_{i} trits[i] * acts[i]) * ULTRA_WAIYAN_HARMONIC` (`36,450x`) using 4 independent
+/// accumulators across 8-lane octads (`0` branches, `0` floating-point operations).
 #[inline(always)]
 pub const fn ultra_waiyan_dot_inline<const N: usize>(trits: &[i8; N], acts: &[i64; N]) -> i64 {
-    let mut raw_acc = 0i64;
+    let mut acc0 = 0i64;
+    let mut acc1 = 0i64;
+    let mut acc2 = 0i64;
+    let mut acc3 = 0i64;
     let mut i = 0usize;
+    while i + 8 <= N {
+        let t0 = (clamp_trit_const(trits[i]) as i64).wrapping_mul(acts[i]);
+        let t1 = (clamp_trit_const(trits[i + 1]) as i64).wrapping_mul(acts[i + 1]);
+        let t2 = (clamp_trit_const(trits[i + 2]) as i64).wrapping_mul(acts[i + 2]);
+        let t3 = (clamp_trit_const(trits[i + 3]) as i64).wrapping_mul(acts[i + 3]);
+        let t4 = (clamp_trit_const(trits[i + 4]) as i64).wrapping_mul(acts[i + 4]);
+        let t5 = (clamp_trit_const(trits[i + 5]) as i64).wrapping_mul(acts[i + 5]);
+        let t6 = (clamp_trit_const(trits[i + 6]) as i64).wrapping_mul(acts[i + 6]);
+        let t7 = (clamp_trit_const(trits[i + 7]) as i64).wrapping_mul(acts[i + 7]);
+        acc0 = acc0.wrapping_add(t0.wrapping_add(t4));
+        acc1 = acc1.wrapping_add(t1.wrapping_add(t5));
+        acc2 = acc2.wrapping_add(t2.wrapping_add(t6));
+        acc3 = acc3.wrapping_add(t3.wrapping_add(t7));
+        i += 8;
+    }
+    let mut raw_acc = acc0
+        .wrapping_add(acc1)
+        .wrapping_add(acc2.wrapping_add(acc3));
     while i < N {
         let t = clamp_trit_const(trits[i]) as i64;
         raw_acc = raw_acc.wrapping_add(t.wrapping_mul(acts[i]));
         i += 1;
     }
     raw_acc.saturating_mul(ULTRA_WAIYAN_HARMONIC)
+}
+
+/// Contracts all `80` CaveCrew hardware lanes (`10` unrolled 8-lane octads) in Ultra Waiyan Mode.
+#[inline(always)]
+pub const fn ultra_waiyan_dot_80_lanes(
+    trits: &[i8; CAVECREW_TOTAL_COMPUTE_LANES],
+    acts: &[i64; CAVECREW_TOTAL_COMPUTE_LANES],
+) -> i64 {
+    ultra_waiyan_dot_inline(trits, acts)
 }
 
 /// Compresses a slice of balanced trits (length a multiple of 5) using **`kompress-super-ultra`**:
@@ -372,10 +427,20 @@ mod tests {
     fn test_base243_pack_unpack_bijection_all_243_states() {
         for b in 0u8..243u8 {
             let trits = unpack_5trits_base243_inline(b).expect("valid 0..242");
+            let trits_mulshift = unpack_5trits_base243_mulshift(b).expect("valid 0..242");
+            assert_eq!(trits, trits_mulshift);
             let repacked = pack_5trits_base243_inline(trits);
             assert_eq!(repacked, b);
         }
         assert!(unpack_5trits_base243_inline(243).is_none());
         assert!(unpack_5trits_base243_inline(255).is_none());
+        assert!(unpack_5trits_base243_mulshift(243).is_none());
+
+        let trits80 = [1i8; CAVECREW_TOTAL_COMPUTE_LANES];
+        let acts80 = [2i64; CAVECREW_TOTAL_COMPUTE_LANES];
+        assert_eq!(
+            ultra_waiyan_dot_80_lanes(&trits80, &acts80),
+            160 * ULTRA_WAIYAN_HARMONIC
+        );
     }
 }

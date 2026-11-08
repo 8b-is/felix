@@ -67,4 +67,11 @@ is
                   and then Ultra_Waiyan_Scale_Act'Result =
                     Integer_64 (Trit) * Act * Super_Saiyan_Multiplier * Omni_Wukong_Sun_Apex;
 
+   -- 5. Granlund-Montgomery Q9 Reciprocal Division by 3 (`(V * 171) >> 9 == V / 3`)
+   function Div3_U8_Fast (V : Base243_Byte) return Unsigned_8
+     with Inline,
+          Pre  => True,
+          Post => Div3_U8_Fast'Result = V / 3
+                  and then Div3_U8_Fast'Result <= 80;
+
 end Cavecrew_Kompress_Spark;
