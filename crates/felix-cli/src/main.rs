@@ -436,8 +436,10 @@ fn cmd_ultra() -> Result<(), Fail> {
     use felix_lang::{
         erdos_pqt_sunflower_consensus::{certify_sunflower_consensus, erdos_kac_omega},
         omni_escanor_zeno_scheduler::{
-            audit_solar_phylogenetic_octad, escanor_solar_gain, is_the_one_high_noon,
-            modulate_ternary_weights_fixed, SolarPhylogeneticRung,
+            audit_krambambuli_morning_sky_seed, audit_solar_phylogenetic_octad, escanor_solar_gain,
+            is_the_one_high_noon, modulate_ternary_weights_fixed, SolarPhylogeneticRung,
+            JINDOUYUN_LI, KRAMBAMBULI_ALBUM_ID, KRAMBAMBULI_DURATION_MS, KRAMBAMBULI_TRACK_ID,
+            KRAMBAMBULI_TRACK_NUMBER,
         },
         quant_ultra_graphs::{
             verify_starlight_pillar_triad_seal, TernaryIncidenceGraph, STARLIGHT_PILLAR_HAIKU_TRIAD,
@@ -450,6 +452,7 @@ fn cmd_ultra() -> Result<(), Fail> {
     let route = fold_sphere_pop_toss(0b000_000, 0b111_111, 1.0);
     let mod_trits = modulate_ternary_weights_fixed(&[1, -1, 0, 1], 12.0, 2);
     let solar_octad = audit_solar_phylogenetic_octad();
+    let sky_seed = audit_krambambuli_morning_sky_seed();
 
     let origo_core = 0b0001_0111u64;
     let petals = [0b1001_0111u64, 0b0101_0111u64, 0b0011_0111u64];
@@ -489,6 +492,17 @@ fn cmd_ultra() -> Result<(), Fail> {
         solar_octad.sun_apex_p,
         solar_octad.total_net_pole,
         solar_octad.all_verified
+    );
+    println!(
+        "  • Krambambuli Sky Seed  : Animal Trainer #{} ({}?i={}, Δ=T₉={}, {}ms) | S(09:00)²={:.1} (45° Dawn) · Frame1[180° Gauge] · Frame2[Phoenix/Jindouyun={} li] (verified={} ✓)",
+        KRAMBAMBULI_TRACK_NUMBER,
+        KRAMBAMBULI_ALBUM_ID,
+        KRAMBAMBULI_TRACK_ID,
+        sky_seed.catalog_triangular_delta,
+        KRAMBAMBULI_DURATION_MS,
+        sky_seed.morning_quadrature_half_power,
+        JINDOUYUN_LI,
+        sky_seed.all_verified
     );
     println!(
         "  • Erdős Sunflower (L24) : disc={:.6} <= 1.0, Sunflower[0,0,0]={:#04x}, ω(30030)={}, p_c={:.6} (qed={} ✓)",
