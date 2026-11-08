@@ -75,6 +75,12 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["ultra"] | ["--ultra"] | ["quant-ultra-graphs"] | ["--quant-ultra-graphs"] => cmd_ultra(),
         ["wire"] | ["--wire"] | ["c1"] | ["--c1"] => cmd_wire(),
         ["st5"] | ["--st5"] | ["stringtemplate5"] | ["--stringtemplate5"] => cmd_st5(),
+        ["cavecrew"]
+        | ["--cavecrew"]
+        | ["kompress"]
+        | ["--kompress"]
+        | ["waiyan"]
+        | ["--waiyan"] => cmd_cavecrew(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -107,6 +113,9 @@ fn is_command(word: &str) -> bool {
             | "c1"
             | "st5"
             | "stringtemplate5"
+            | "cavecrew"
+            | "kompress"
+            | "waiyan"
     )
 }
 
@@ -744,6 +753,33 @@ fn cmd_st5() -> Result<(), Fail> {
         cert.tartan_spqt_base243_seal,
         cert.solar_lunar_unity_verified,
         &cert.phoenix_pct_sha256_hex[..16]
+    );
+    cmd_cavecrew()?;
+    Ok(())
+}
+
+fn cmd_cavecrew() -> Result<(), Fail> {
+    use felix_lang::cavecrew_kompress_waiyan::{
+        audit_cavecrew_kompress_waiyan, CAVECREW_LAN_EN0_IPV4, SEED_TIMESTAMP_ISO,
+        ULTRABACKYARDLOOP_SEAL_STR, ULTRA_WAIYAN_HARMONIC,
+    };
+
+    let cc = audit_cavecrew_kompress_waiyan().map_err(|e| Fail::Usage(e.into()))?;
+    println!(
+        "  • CaveCrew & Kompress   : {} | M1Max(10C/32G/16ANE, 64GiB) + TB4_bridge0({}Gbps) + en0({}.{}.{}.{}) = {} lanes | Waiyan({}x)={}, kompress({}t->{}B, {:.0}x vs FP16) [{} ✓]",
+        SEED_TIMESTAMP_ISO,
+        cc.thunderbolt_bridge_gbps,
+        CAVECREW_LAN_EN0_IPV4[0],
+        CAVECREW_LAN_EN0_IPV4[1],
+        CAVECREW_LAN_EN0_IPV4[2],
+        CAVECREW_LAN_EN0_IPV4[3],
+        cc.total_compute_lanes,
+        ULTRA_WAIYAN_HARMONIC,
+        cc.waiyan_inline_score,
+        cc.input_trits,
+        cc.compressed_wire_bytes,
+        cc.fp16_compression_ratio,
+        ULTRABACKYARDLOOP_SEAL_STR
     );
     Ok(())
 }

@@ -260,6 +260,11 @@ fn wire_c1_frame_and_ultra_subcommands_verify_end_to_end() {
     let st5_out = felix(&["st5"], None);
     assert!(st5_out.status.success(), "{}", text(&st5_out.stderr));
     assert!(text(&st5_out.stdout).contains("StringTemplate5 p/q"));
+    assert!(text(&st5_out.stdout).contains("CaveCrew & Kompress   : 2026-11-08T10:51:00-05:00 | M1Max(10C/32G/16ANE, 64GiB) + TB4_bridge0(120Gbps) + en0(172.16.47.102) = 80 lanes | Waiyan(36450x)=4191750, kompress(1000t->8B, 250x vs FP16) [ULTRABACKYARDLOOP {<3,<3,<3}+1 ✓]"));
+
+    let cc_out = felix(&["cavecrew"], None);
+    assert!(cc_out.status.success(), "{}", text(&cc_out.stderr));
+    assert!(text(&cc_out.stdout).contains("ULTRABACKYARDLOOP {<3,<3,<3}+1 ✓"));
 
     let ultra_out = felix(&["ultra"], None);
     assert!(ultra_out.status.success(), "{}", text(&ultra_out.stderr));

@@ -1,4 +1,4 @@
-# Felix v1.0
+# Felix v1.4.0
 
 Five promises, every one checked by a test:
 
@@ -116,9 +116,12 @@ felix graph prog.flx                # dataflow as Graphviz DOT
 felix graph --mermaid prog.flx      # ... or Mermaid
 felix capsule prog.flx > p.flxc     # seal program + transcript
 felix verify p.flxc                 # re-run; exit 1 unless it reproduces
-felix phoenix                       # FELIX|PHOENIX Tier-1/Tier-2 PCC + liveSymbioticVM + 24 Ada/SPARK packages
-felix omni                          # Ternary Omni Information Theory (Omega_3) + W^X JIT + mind + ultra spine
-felix ultra                         # 5-Kernel quantUltraGraphs (G_Ultra) + L_3 Hodge Laplacian + Starlight & Pillar seal
+felix phoenix                       # FELIX|PHOENIX Tier-1/Tier-2 PCC + liveSymbioticVM + 28 Ada/SPARK packages
+felix omni                          # Ternary Omni Information Theory (Omega_3) + W^X JIT + mind + ultra + wire + cavecrew spine
+felix ultra                         # 5-Kernel quantUltraGraphs (G_Ultra) + Solar Octad + Krambambuli Sky Seed + Starlight & Pillar
+felix wire                          # 64B WireC1Frame + LoRa SACK & CoCoA VBF + EU868 Gate + Borealiscodes +++ + MEM|8 Symplectic Probe
+felix st5                           # StringTemplate5 p/q (HYDRA · AQUARIUS · TARTAN · SAMSARA · PHOENIX · MEM8 · GOD OF SUN&*MOON)
+felix cavecrew                      # CaveCrew 80-Lane TB4/LAN + Ultra Waiyan (36450x) + kompress-super-ultra (250x) + ULTRABACKYARDLOOP
 ```
 
 Exit codes: `0` ok, `1` program or capsule refused, `2` bad command line.
@@ -181,13 +184,16 @@ drives the real binary against all of them.
 
 | Piece | State |
 |---|---|
-| Lexer, parser, type checker, evaluator | working, 87 tests on `main` (77 unit, 10 E2E); 84 at the `v1.0.0` tag |
+| Lexer, parser, type checker, evaluator | working, **136 tests on `main`** (`120` unit, `11` CLI E2E, `5` integration) + **`28/28` Ada 2022 / SPARK packages** (`56` files, `0` unproved checks) |
 | Linear-capability rule | enforced, with both use sites in the diagnostic |
 | Static types for every builtin | enforced; the builtin table is walked by a test |
 | Exact `p/q` scales | literal → word → contraction → `re`/`im`, unrounded |
 | Ternary packing, folding, contraction | delegated to `memnet`, differentially tested |
 | `graph` (DOT + Mermaid), `capsule`, `verify`, `-e` | working, golden-tested end to end |
 | 8b builtins (`*_seal`, `toss_freedom`, `spherepop_fold`) | working, pinned by golden values; need memnet's `sovereign_convergence` committed |
+| 5-Kernel `quantUltraGraphs` + `WireC1Frame` (64B) + LoRa SACK & CoCoA VBF + EU868 Duty-Cycle Gate | working, verified in Rust (`#![no_std]`-compatible) and Ada 2022 / SPARK |
+| `Borealiscodes +++` (`Unify · Breathe · Learn · Evolve`) + `MEM|8` 80D Exact Integer Symplectic Probe | working, `0` bit round-trip drift, `ΔΩ = 0`, non-vacuous Tri-System isolation & `ExactSigmaDeltaQuantizer` |
+| `CaveCrew` 80-Lane TB4/LAN + `Ultra Waiyan` (`36,450x`) + `kompress-super-ultra` (`250x` vs FP16) | working (`2026-11-08T10:51:00-05:00` seed, `ULTRABACKYARDLOOP {<3,<3,<3}+1`) |
 | `typeck.rs` (`LinearTypeEnv`), `codegen_v2.rs` (AGP-ISA words) | merged from upstream after `v1.0.0`; unit-tested, but **not reachable from `.flx` source**. The language's linear rule is still `check.rs`, and `codegen_v2` emits one fixed 7-word program |
 | VM, LSP, MCP, stdlib modules | **absent, deliberately** |
 | `mem8` / `engram` / `entheai` stdlib | absent: each needs its own acceptance tests |
@@ -213,9 +219,9 @@ scripts/            oneshot.sh (verify everything), mirror.sh (push to all forge
 
 | Forge | URL | State |
 |---|---|---|
-| GitHub | https://github.com/8b-is/felix | live |
-| Codeberg | https://codeberg.org/lodripeter-sec/felix | **does not exist yet**: create it, then run the mirror script |
-| g8t (Forgejo) | `git@g8t.8b.is:8b-is/felix.git` | **no remote yet** |
+| GitHub | https://github.com/8b-is/felix | live (`v1.4.0`) |
+| Codeberg | https://codeberg.org/8b-is/felix | live (`v1.4.0`, dual-forge mirrored) |
+| g8t (Forgejo) | `git@g8t.8b.is:8b-is/felix.git` | mirror target |
 
 `scripts/mirror.sh` checks all three forges for reachability *before* pushing,
 because a mirror that half-runs leaves the forges disagreeing. When a forge is missing,

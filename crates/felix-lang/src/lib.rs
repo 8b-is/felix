@@ -42,6 +42,7 @@ pub mod agp_dma_ring_sim;
 pub mod agp_isa_packetizer;
 pub mod ast;
 pub mod capsule;
+pub mod cavecrew_kompress_waiyan;
 pub mod check;
 pub mod codegen_v2;
 pub mod diag;
