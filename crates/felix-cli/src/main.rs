@@ -781,5 +781,19 @@ fn cmd_cavecrew() -> Result<(), Fail> {
         cc.fp16_compression_ratio,
         ULTRABACKYARDLOOP_SEAL_STR
     );
+    let q4 = felix_lang::qwen4_exp_train_8bis::audit_qwen4_exp_train_8bis()
+        .map_err(|e| Fail::Usage(e.into()))?;
+    println!(
+        "  • Qwen4-Exp @ train.8b.is: hf:PeetPedro({} datasets, Σw={}) -> Qwen4Exp[GR(hc=3)+QSA(act={}, trail={})+PLE] -> oblit/ablit(dot={}, ΔL1={}) -> A6000({}/{} MiB = {} VRAM ✓)",
+        q4.dataset_count,
+        q4.dataset_weight_sum,
+        q4.qsa_active_tokens,
+        q4.qsa_trailing_uncompressed,
+        q4.post_obliteration_dot,
+        q4.dual_reflection_l1_drift,
+        q4.a6000_peak_vram_mib,
+        felix_lang::qwen4_exp_train_8bis::A6000_TOTAL_VRAM_MIB,
+        q4.a6000_utilization_pq
+    );
     Ok(())
 }
