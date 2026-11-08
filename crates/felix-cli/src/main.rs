@@ -504,10 +504,13 @@ fn cmd_ultra() -> Result<(), Fail> {
 }
 
 fn cmd_wire() -> Result<(), Fail> {
-    use felix_lang::wire_c1_frame::{
-        verify_karmapa_chenrezig_sadhana_invariants, Dyadic64, DyadicDecSemilattice,
-        GeodesicTidalBridge, LocalClusterNode, State0Cell, WireC1Frame, CHENREZIG_MANTRA,
-        DYADIC_SHIFT_DEFAULT, KARMAPA_MANTRA, WIRE_MAGIC,
+    use felix_lang::{
+        lora_sack_rto::LoraSackTracker,
+        wire_c1_frame::{
+            verify_karmapa_chenrezig_sadhana_invariants, Dyadic64, DyadicDecSemilattice,
+            GeodesicTidalBridge, LocalClusterNode, State0Cell, WireC1Frame, CHENREZIG_MANTRA,
+            DYADIC_SHIFT_DEFAULT, KARMAPA_MANTRA, WIRE_MAGIC,
+        },
     };
 
     let mut v0 = State0Cell::new();
@@ -542,10 +545,21 @@ fn cmd_wire() -> Result<(), Fail> {
         GeodesicTidalBridge::evaluate_jacobi_deviation(&r_i0j0, &[0.5, 2.0, -1.0]);
     let sadhana_ok = verify_karmapa_chenrezig_sadhana_invariants();
 
+    let mut sack = LoraSackTracker::new(100, 120, 60, 30_000);
+    let _ = sack.on_transmit(100, 1000);
+    let _ = sack.on_transmit(101, 1000);
+    let _ = sack.on_transmit(102, 1000);
+    sack.on_ack_and_sack(100, 0b11, 1360);
+    let expired_hole = sack.poll_expired_hole(1500);
+    let backed_off_rto = sack.rto.current_rto_ms();
+    sack.on_ack_and_sack(103, 0, 1900);
+
     println!(
-        "  • WireC1Frame & DEC     : magic={:#06x} ({} B), T_flat={} -> P_⊔ Stokes ∮θ=0={}, v*={:?}, idempotent={} ✓",
+        "  • WireC1Frame (64B@8B)  : magic={:#06x}, size={} B, first_apply={}, dup_ignored={}, T_flat={} -> P_⊔ Stokes ∮θ=0={}, v*={:?}, idempotent={} ✓",
         WIRE_MAGIC,
         wire_bytes.len(),
+        first_apply,
+        !duplicate_apply,
         torsion.is_flat(),
         stokes_closed,
         v_star.clock,
@@ -558,6 +572,16 @@ fn cmd_wire() -> Result<(), Fail> {
         KARMAPA_MANTRA,
         CHENREZIG_MANTRA,
         sadhana_ok
+    );
+    println!(
+        "  • LoRa SACK & Int RTO   : srtt_x8={} ({}ms), rttvar_x4={} (4*{}ms), rto_min={}ms (2*ToA+G), hole={:?} -> backoff_rto={}ms (Karn's rule ✓)",
+        sack.rto.srtt_x8,
+        sack.rto.srtt_ms(),
+        sack.rto.rttvar_x4,
+        sack.rto.rttvar_ms(),
+        sack.rto.rto_min_ms,
+        expired_hole,
+        backed_off_rto
     );
     Ok(())
 }

@@ -55,6 +55,7 @@ pub mod fpga_axis_ternary;
 pub mod galaxia_m8_federation;
 pub mod graph;
 pub mod ljodatal_18_charms;
+pub mod lora_sack_rto;
 pub mod m8_axum_webhook_server;
 pub mod m8_genesis_container;
 pub mod mind_all_neuro_omega;
