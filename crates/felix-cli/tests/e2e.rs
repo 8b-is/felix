@@ -262,6 +262,7 @@ fn wire_c1_frame_and_ultra_subcommands_verify_end_to_end() {
     let ultra_out = felix(&["ultra"], None);
     assert!(ultra_out.status.success(), "{}", text(&ultra_out.stderr));
     let ultra_txt = text(&ultra_out.stdout);
+    assert!(ultra_txt.contains("Solar Octad (8-Rung)  : bonobo->vulpes->feline [Δ=0] | super saiyan(50x)->sapiens->erectus [Δ=0] | deiti->sun(729) [net=+1, verified=true ✓]"));
     assert!(ultra_txt.contains("quantUltraGraphs (L25)"));
     assert!(ultra_txt.contains("WireC1Frame (64B@8B)"));
     assert!(ultra_txt.contains("LoRa SACK & Int RTO"));

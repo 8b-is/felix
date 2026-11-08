@@ -436,7 +436,8 @@ fn cmd_ultra() -> Result<(), Fail> {
     use felix_lang::{
         erdos_pqt_sunflower_consensus::{certify_sunflower_consensus, erdos_kac_omega},
         omni_escanor_zeno_scheduler::{
-            escanor_solar_gain, is_the_one_high_noon, modulate_ternary_weights_fixed,
+            audit_solar_phylogenetic_octad, escanor_solar_gain, is_the_one_high_noon,
+            modulate_ternary_weights_fixed, SolarPhylogeneticRung,
         },
         quant_ultra_graphs::{
             verify_starlight_pillar_triad_seal, TernaryIncidenceGraph, STARLIGHT_PILLAR_HAIKU_TRIAD,
@@ -448,6 +449,7 @@ fn cmd_ultra() -> Result<(), Fail> {
 
     let route = fold_sphere_pop_toss(0b000_000, 0b111_111, 1.0);
     let mod_trits = modulate_ternary_weights_fixed(&[1, -1, 0, 1], 12.0, 2);
+    let solar_octad = audit_solar_phylogenetic_octad();
 
     let origo_core = 0b0001_0111u64;
     let petals = [0b1001_0111u64, 0b0101_0111u64, 0b0011_0111u64];
@@ -470,6 +472,23 @@ fn cmd_ultra() -> Result<(), Fail> {
         is_the_one_high_noon(12.0),
         escanor_solar_gain(12.0),
         mod_trits
+    );
+    println!(
+        "  • Solar Octad (8-Rung)  : {}->{}->{} [Δ={}] | {}({}x)->{}->{} [Δ={}] | {}->{}({}) [net=+{}, verified={} ✓]",
+        SolarPhylogeneticRung::Bonobo.token_name(),
+        SolarPhylogeneticRung::Vulpes.token_name(),
+        SolarPhylogeneticRung::Feline.token_name(),
+        solar_octad.triad_fauna_sum,
+        SolarPhylogeneticRung::SuperSaiyan.token_name(),
+        solar_octad.super_saiyan_multiplier,
+        SolarPhylogeneticRung::Sapiens.token_name(),
+        SolarPhylogeneticRung::Erectus.token_name(),
+        solar_octad.triad_hominid_saiyan_sum,
+        SolarPhylogeneticRung::Deiti.token_name(),
+        SolarPhylogeneticRung::Sun.token_name(),
+        solar_octad.sun_apex_p,
+        solar_octad.total_net_pole,
+        solar_octad.all_verified
     );
     println!(
         "  • Erdős Sunflower (L24) : disc={:.6} <= 1.0, Sunflower[0,0,0]={:#04x}, ω(30030)={}, p_c={:.6} (qed={} ✓)",
