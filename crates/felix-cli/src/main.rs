@@ -73,6 +73,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["erdos"] | ["--erdos"] | ["pqt"] | ["--pqt"] => cmd_erdos(),
         ["inference"] | ["--inference"] | ["hypercube"] | ["--hypercube"] => cmd_inference(),
         ["ultra"] | ["--ultra"] | ["quant-ultra-graphs"] | ["--quant-ultra-graphs"] => cmd_ultra(),
+        ["wire"] | ["--wire"] | ["c1"] | ["--c1"] => cmd_wire(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -101,6 +102,8 @@ fn is_command(word: &str) -> bool {
             | "hypercube"
             | "ultra"
             | "quant-ultra-graphs"
+            | "wire"
+            | "c1"
     )
 }
 
@@ -495,6 +498,40 @@ fn cmd_ultra() -> Result<(), Fail> {
         STARLIGHT_PILLAR_HAIKU_TRIAD[2].line_7,
         STARLIGHT_PILLAR_HAIKU_TRIAD[2].line_5b,
         haiku_ok
+    );
+    cmd_wire()?;
+    Ok(())
+}
+
+fn cmd_wire() -> Result<(), Fail> {
+    use felix_lang::wire_c1_frame::{
+        LocalClusterNode, WireC1Frame, DYADIC_SHIFT_DEFAULT, WIRE_MAGIC,
+    };
+
+    let mut outgoing = WireC1Frame::new(0, 1001);
+    outgoing.push_delta(0, 11, 1 << (DYADIC_SHIFT_DEFAULT - 2));
+    outgoing.push_delta(1, 6, 3 << (DYADIC_SHIFT_DEFAULT - 1));
+    let wire_bytes = outgoing.as_bytes();
+
+    let mut node = LocalClusterNode {
+        clocks: [10, 5, 0, 0],
+        values: [0, 0, 0, 0],
+    };
+    let first_apply = node
+        .ingest_wire_frame(wire_bytes)
+        .map_err(|e| Fail::Usage(format!("WireC1Frame error: {e:?}")))?;
+    let duplicate_apply = node
+        .ingest_wire_frame(wire_bytes)
+        .map_err(|e| Fail::Usage(format!("WireC1Frame error: {e:?}")))?;
+
+    println!(
+        "  • WireC1Frame (64B@8B)  : magic={:#06x}, size={} B, first_apply={}, dup_ignored={}, clocks={:?} (idempotent={} ✓)",
+        WIRE_MAGIC,
+        wire_bytes.len(),
+        first_apply,
+        !duplicate_apply,
+        node.clocks,
+        first_apply && !duplicate_apply
     );
     Ok(())
 }

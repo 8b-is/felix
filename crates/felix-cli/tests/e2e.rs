@@ -233,3 +233,19 @@ fn the_command_line_is_checked_too() {
         format!("felix {}\n", env!("CARGO_PKG_VERSION"))
     );
 }
+
+#[test]
+fn wire_c1_frame_and_ultra_subcommands_verify_end_to_end() {
+    let wire_out = felix(&["wire"], None);
+    assert!(wire_out.status.success(), "{}", text(&wire_out.stderr));
+    let wire_txt = text(&wire_out.stdout);
+    assert!(wire_txt.contains("WireC1Frame (64B@8B)"));
+    assert!(wire_txt.contains("magic=0x8b15, size=64 B, first_apply=true, dup_ignored=true"));
+    assert!(wire_txt.contains("idempotent=true ✓"));
+
+    let ultra_out = felix(&["ultra"], None);
+    assert!(ultra_out.status.success(), "{}", text(&ultra_out.stderr));
+    let ultra_txt = text(&ultra_out.stdout);
+    assert!(ultra_txt.contains("quantUltraGraphs (L25)"));
+    assert!(ultra_txt.contains("WireC1Frame (64B@8B)"));
+}
