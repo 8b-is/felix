@@ -116,6 +116,9 @@ felix graph prog.flx                # dataflow as Graphviz DOT
 felix graph --mermaid prog.flx      # ... or Mermaid
 felix capsule prog.flx > p.flxc     # seal program + transcript
 felix verify p.flxc                 # re-run; exit 1 unless it reproduces
+felix phoenix                       # FELIX|PHOENIX Tier-1/Tier-2 PCC + liveSymbioticVM + 24 Ada/SPARK packages
+felix omni                          # Ternary Omni Information Theory (Omega_3) + W^X JIT + mind + ultra spine
+felix ultra                         # 5-Kernel quantUltraGraphs (G_Ultra) + L_3 Hodge Laplacian + Starlight & Pillar seal
 ```
 
 Exit codes: `0` ok, `1` program or capsule refused, `2` bad command line.

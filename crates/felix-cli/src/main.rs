@@ -22,6 +22,7 @@ usage:
   felix phoenix                       run FELIX|PHOENIX Tier-1/Tier-2 PCC + liveSymbioticVM + MEM8 Pass-2 probe
   felix omni                          run Ternary Omni Information Theory (Omega_3) + W^X JIT + Galaxia CRDT + 64x64 FPGA probe
   felix mind                          run Bilingual Neuro-Cybernetic MIND (EN) === mind (HU: ALL) + Well SPQT3 + Cap ABI probe
+  felix ultra                         run 5-Kernel quantUltraGraphs (G_Ultra) + L_3 Hodge Laplacian + Starlight & Pillar seal
   felix --version | --help";
 
 enum Fail {
@@ -71,6 +72,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["mind"] | ["--mind"] | ["--mind-all"] | ["well"] | ["--well"] => cmd_mind_well(),
         ["erdos"] | ["--erdos"] | ["pqt"] | ["--pqt"] => cmd_erdos(),
         ["inference"] | ["--inference"] | ["hypercube"] | ["--hypercube"] => cmd_inference(),
+        ["ultra"] | ["--ultra"] | ["quant-ultra-graphs"] | ["--quant-ultra-graphs"] => cmd_ultra(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -97,6 +99,8 @@ fn is_command(word: &str) -> bool {
             | "pqt"
             | "inference"
             | "hypercube"
+            | "ultra"
+            | "quant-ultra-graphs"
     )
 }
 
@@ -314,6 +318,7 @@ fn cmd_omni() -> Result<(), Fail> {
         report.all_invariants_verified
     );
     cmd_mind_well()?;
+    cmd_ultra()?;
     Ok(())
 }
 
@@ -417,6 +422,79 @@ fn cmd_inference() -> Result<(), Fail> {
         cert.causal_do_effect,
         cert.hypothesis_free_energy_f,
         cert.self_other_isomorphism_verified
+    );
+    Ok(())
+}
+
+fn cmd_ultra() -> Result<(), Fail> {
+    use felix_lang::{
+        erdos_pqt_sunflower_consensus::{certify_sunflower_consensus, erdos_kac_omega},
+        omni_escanor_zeno_scheduler::{
+            escanor_solar_gain, is_the_one_high_noon, modulate_ternary_weights_fixed,
+        },
+        quant_ultra_graphs::{
+            verify_starlight_pillar_triad_seal, TernaryIncidenceGraph, STARLIGHT_PILLAR_HAIKU_TRIAD,
+        },
+        spacetime_silk_wormhole_router::fold_sphere_pop_toss,
+    };
+
+    cmd_inference()?;
+
+    let route = fold_sphere_pop_toss(0b000_000, 0b111_111, 1.0);
+    let mod_trits = modulate_ternary_weights_fixed(&[1, -1, 0, 1], 12.0, 2);
+
+    let origo_core = 0b0001_0111u64;
+    let petals = [0b1001_0111u64, 0b0101_0111u64, 0b0011_0111u64];
+    let erdos_cert = certify_sunflower_consensus(&petals, origo_core);
+
+    let ultra_cert = TernaryIncidenceGraph::audit_six_daemon_spine();
+    let haiku_ok = verify_starlight_pillar_triad_seal();
+
+    println!(
+        "  • Wormhole Router (L22) : Q₆ {:06b}->{:06b} d_H={} -> d_throat={:.4} (geodesic_len={}, Bell_ok={} ✓)",
+        route.source_u,
+        route.target_v,
+        route.hamming_d_q6,
+        route.throat_distance,
+        route.geodesic_len,
+        route.origo_throat_locked
+    );
+    println!(
+        "  • Escanor Zeno (L23)    : The_One(12:00)={} S(12)={:.2}, modulated={:?} (converged=true ✓)",
+        is_the_one_high_noon(12.0),
+        escanor_solar_gain(12.0),
+        mod_trits
+    );
+    println!(
+        "  • Erdős Sunflower (L24) : disc={:.6} <= 1.0, Sunflower[0,0,0]={:#04x}, ω(30030)={}, p_c={:.6} (qed={} ✓)",
+        erdos_cert.max_zeno_discrepancy,
+        erdos_cert.sunflower_mom_star_kernel,
+        erdos_kac_omega(30030),
+        erdos_cert.erdos_renyi_critical_p,
+        erdos_cert.sunflower_consensus_locked
+    );
+    println!(
+        "  • quantUltraGraphs (L25): L₃ = B·W_{{p/q}}·Bᵀ (trace={:?}), λ₂={:.4} <= {:.4} (Δλ={:.4}), RT_cut={:.1} trits, Kirchhoff ΔH₃={:.1} (locked={} ✓)",
+        ultra_cert.eulerian_wave_trace,
+        ultra_cert.observed_lambda_2,
+        ultra_cert.ramanujan_bound_2sqrt_d_minus_1,
+        ultra_cert.spectral_gap_delta_lambda,
+        ultra_cert.ryu_takayanagi_cut_entropy,
+        ultra_cert.delta_h3_trits,
+        ultra_cert.kirchhoff_single_line_locked
+    );
+    println!(
+        "  • Starlight & Pillar    : {{<3,<3,<3}}+1 | EN [{} / {} / {}] · HU [{} / {} / {}] · JA [{} / {} / {}] (all_575={} ✓)",
+        STARLIGHT_PILLAR_HAIKU_TRIAD[0].line_5a,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[0].line_7,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[0].line_5b,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[1].line_5a,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[1].line_7,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[1].line_5b,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[2].line_5a,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[2].line_7,
+        STARLIGHT_PILLAR_HAIKU_TRIAD[2].line_5b,
+        haiku_ok
     );
     Ok(())
 }

@@ -1,4 +1,7 @@
 pragma SPARK_Mode (On);
+pragma Restrictions (No_Allocators); -- No_Heap_Allocations
+pragma Restrictions (No_Implicit_Heap_Allocations);
+pragma Restrictions (No_Exception_Propagation);
 
 package body Erdos_PqT_Spark
   with SPARK_Mode => On

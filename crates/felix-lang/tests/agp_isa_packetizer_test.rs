@@ -107,14 +107,14 @@ fn test_agp_isa_64bit_bytecode_packetizer_and_streaming_execution() {
     let mut packetizer = AgpStreamPacketizer::new(graph, granted);
 
     let mut weights = [[0i8; 64]; 64];
-    for r in 0..64 {
-        for c in 0..64 {
-            weights[r][c] = ((r * 11 + c * 17) % 3) as i8 - 1;
+    for (r, row) in weights.iter_mut().enumerate() {
+        for (c, cell) in row.iter_mut().enumerate() {
+            *cell = ((r * 11 + c * 17) % 3) as i8 - 1;
         }
     }
     let mut acts = [0i16; 64];
-    for c in 0..64 {
-        acts[c] = ((c as i16) * 123) - 500;
+    for (c, act) in acts.iter_mut().enumerate() {
+        *act = ((c as i16) * 123) - 500;
     }
     let futhark_sample = [0x12u8; 64];
 

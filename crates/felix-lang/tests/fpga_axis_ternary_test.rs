@@ -24,29 +24,26 @@ fn test_systemverilog_64x64_ternary_axis_tgemm_rok_futhark27_and_i16_min() {
 
     // 1. Load 64 rows x 64 trits via AXI4-Stream `AXIS_CMD_LOAD_WEIGHT_ROW`
     let mut expected_weights = [[0i8; 64]; 64];
-    for r in 0..64usize {
-        for c in 0..64usize {
-            expected_weights[r][c] = ((r * 7 + c * 13) % 3) as i8 - 1;
+    for (r, row) in expected_weights.iter_mut().enumerate() {
+        for (c, cell) in row.iter_mut().enumerate() {
+            *cell = ((r * 7 + c * 13) % 3) as i8 - 1;
         }
         // Row 0: set all weights to -1 to test 64 * (-1) * (-32768) = +2,097,152
         if r == 0 {
-            expected_weights[r] = [-1i8; 64];
+            *row = [-1i8; 64];
         }
         let beat = FpgaTernary64x64AxisCore::build_load_row_beat(
-            r,
-            &expected_weights[r],
-            4, // E2M1 nibble 4 = 1.0 (Q2.2 numerator = 4)
+            r, row, 4, // E2M1 nibble 4 = 1.0 (Q2.2 numerator = 4)
             6, // E2M1 nibble 6 = 2.0 (Q2.2 numerator = 8)
-            false,
-            zero_key,
+            false, zero_key,
         );
         assert!(fpga.send_single_beat(&beat).is_none());
     }
 
     // 2. Test extreme i16::MIN (-32768) safety + full 64-row contraction parity
     let mut acts = [0i16; 64];
-    for c in 0..64usize {
-        acts[c] = if c % 4 == 0 {
+    for (c, act) in acts.iter_mut().enumerate() {
+        *act = if c % 4 == 0 {
             i16::MIN // -32768
         } else {
             ((c as i16) * 211) - 3000

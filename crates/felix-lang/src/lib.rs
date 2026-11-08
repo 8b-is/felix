@@ -1,3 +1,12 @@
+#![allow(
+    clippy::needless_range_loop,
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    clippy::doc_lazy_continuation,
+    clippy::manual_div_ceil,
+    clippy::unnecessary_cast,
+    clippy::default_constructed_unit_structs
+)]
 //! Felix v1.0 — a small language whose promises are all checked.
 //!
 //! The scaffold this grew out of proposed a compiler, a VM, an LSP, an MCP
@@ -37,6 +46,7 @@ pub mod check;
 pub mod codegen_v2;
 pub mod diag;
 pub mod erdos_pqt_omniversal;
+pub mod erdos_pqt_sunflower_consensus;
 pub mod esp32s3_espnow_mesh;
 pub mod eval;
 pub mod felix_codegen_jit;
@@ -50,6 +60,7 @@ pub mod m8_genesis_container;
 pub mod mind_all_neuro_omega;
 
 pub mod lexer;
+pub mod omni_escanor_zeno_scheduler;
 pub mod omni_subsystems;
 pub mod omni_ternary_info;
 pub mod parser;
@@ -60,9 +71,11 @@ pub mod quant_ultra_graphs;
 pub mod ratio;
 pub mod self_other_hypercube_inference;
 pub mod signed_ternary_graph;
+pub mod spacetime_silk_wormhole_router;
 pub mod typeck;
 pub mod well_signal_resolution;
 pub mod well_signal_spqt_espnow;
+pub mod wire_c1_frame;
 
 pub use omni_subsystems::{
     ada_bridge, dag_scheduler, ernie55_backbone, futhark_cipher_simd, latent_moe_simd, model_cache,
