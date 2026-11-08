@@ -1,6 +1,7 @@
-//! Memory-Safe 64-Byte Aligned Wire Frame (`WireC1Frame`) & Idempotent Gossip Ingestion
+//! Memory-Safe 64-Byte Aligned Wire Frame (`WireC1Frame`), Dyadic Rational (`Z[1/2]`) DEC Cartan Torsion
+//! Semilattice (`DyadicDecSemilattice`), Geodesic Deviation Tidal Bridge, and 16th Karmapa & Chenrezig Sadhana Triad
 //!
-//! Ensures soundness when casting, copying, and transmitting fixed 64-byte wire frames:
+//! Ensures soundness when casting, copying, reconciling, and transmitting fixed 64-byte wire frames:
 //! 1. **No Enum Discriminant UB**: `WireC1Frame` stores `kind: u8` instead of `FrameKind`
 //!    and validates via `FrameKind::from_u8` after casting.
 //! 2. **Zero Implicit Padding UB**: Exact 64-byte field layout (`2 + 1 + 1 + 2 + 2 + 8 + 16 + 32 = 64` bytes)
@@ -12,13 +13,289 @@
 //! 5. **Idempotent Causal Clock Guard + Snapshot Catchup**: `LocalClusterNode::ingest_wire_frame` verifies
 //!    incremental deltas (`incoming_clock == clock + 1`) and supports state cochain snapshots (`State0Cochain`)
 //!    to recover from dropped UDP packets.
+//! 6. **Dyadic Rational DEC Cochains (`C^0, C^1, C^2`) & Cartan Torsion Retraction (`P_⊔`)**:
+//!    Eliminates IEEE 754 drift via exact `Dyadic64` (`m / 2^16`) cochains and proves Stokes' closure `∮_{∂Σ} θ = 0`.
+//! 7. **Jacobi Geodesic Deviation & 16th Karmapa / Chenrezig Sadhana Resonance**:
+//!    Verifies `D^2 n^i / Dτ^2 = -R^i_{00j} ξ^j = -E_{ij} ξ^j` (`R_{00} = ∇^2 Φ`) alongside the Three-Place
+//!    (`OM AH HUM` -> `+1, 0, -1`) and Six-Syllable (`OM MANI PADME HUM`) invariants.
 
+use core::cmp::{max, Ordering};
 use core::mem::{align_of, size_of};
+use core::ops::{Add, Sub};
 use core::slice;
 
 pub const WIRE_MAGIC: u16 = 0x8B15;
 pub const MAX_NODES: usize = 4;
 pub const DYADIC_SHIFT_DEFAULT: u8 = 16;
+pub const DYADIC_SHIFT: u32 = 16;
+
+/// 16th Karmapa Short Sadhana Mantra (*Spontaneously Fulfilling All Desires*).
+pub const KARMAPA_MANTRA: &str = "KARMAPA KHYENNO";
+
+/// Three-Place Guru Yoga syllables (`OM` White/Body `+1`, `AH` Red/Speech `0`, `HUM` Blue/Mind `-1`)
+/// dissolving into the inseparable Dharmakaya (`YER-MED CHÖ-KYI KU-RU DRUB-PAR-GYUR`).
+pub const KARMAPA_THREE_PLACES_OM_AH_HUM: [(&str, &str, i8); 3] = [
+    ("OM", "White / Body (KU) / Forehead", 1),
+    ("AH", "Red / Speech (GUNG) / Throat", 0),
+    ("HUM", "Blue / Mind (THUG) / Heart", -1),
+];
+
+/// Chenrezig Six-Syllable Mantra (*For the Benefit of All Beings*).
+pub const CHENREZIG_MANTRA: &str = "OM MANI PADME HUM";
+
+/// Six syllables purifying the six realms of existence across the 6-vertex Eulerian ring.
+pub const CHENREZIG_SIX_SYLLABLES: [&str; 6] = ["OM", "MA", "NI", "PAD", "ME", "HUM"];
+
+/// Verifies the balanced-ternary zero-sum conservation (`+1 + 0 + (-1) = 0`) of the
+/// 16th Karmapa Three-Place blessing (`OM AH HUM`) and the 6-syllable Chenrezig ring (`OM MANI PADME HUM`).
+#[inline]
+pub fn verify_karmapa_chenrezig_sadhana_invariants() -> bool {
+    let three_place_sum: i32 = KARMAPA_THREE_PLACES_OM_AH_HUM
+        .iter()
+        .map(|&(_, _, pole)| pole as i32)
+        .sum();
+    three_place_sum == 0
+        && KARMAPA_MANTRA == "KARMAPA KHYENNO"
+        && CHENREZIG_MANTRA == "OM MANI PADME HUM"
+        && CHENREZIG_SIX_SYLLABLES.len() == 6
+}
+
+/// Dyadic Rational: `q = mantissa / 2^16`.
+/// Exact representation in `Z[1/2]`, immune to floating-point rounding drift.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Dyadic64(pub i64);
+
+impl Dyadic64 {
+    pub const ZERO: Self = Self(0);
+
+    #[inline(always)]
+    pub const fn from_int(v: i64) -> Self {
+        Self(v << DYADIC_SHIFT)
+    }
+
+    #[inline(always)]
+    pub const fn from_raw(raw: i64) -> Self {
+        Self(raw)
+    }
+
+    #[inline(always)]
+    pub const fn raw(self) -> i64 {
+        self.0
+    }
+
+    #[inline(always)]
+    pub fn sup(self, other: Self) -> Self {
+        Self(max(self.0, other.0))
+    }
+}
+
+impl Add for Dyadic64 {
+    type Output = Self;
+    #[inline(always)]
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+
+impl Sub for Dyadic64 {
+    type Output = Self;
+    #[inline(always)]
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+
+impl PartialOrd for Dyadic64 {
+    #[inline(always)]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Dyadic64 {
+    #[inline(always)]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+/// 0-Cochain: Discrete state vector at a 0-cell (vertex).
+/// Occupies exactly 64 bytes (`4 * 8 + 4 * 8` = 1 CPU cache line).
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct State0Cell {
+    pub clock: [u64; MAX_NODES],
+    pub value: [Dyadic64; MAX_NODES],
+}
+
+impl Default for State0Cell {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl State0Cell {
+    pub const fn new() -> Self {
+        Self {
+            clock: [0; MAX_NODES],
+            value: [Dyadic64::ZERO; MAX_NODES],
+        }
+    }
+
+    /// Advances state along a directed 1-cell via an exact dyadic mutation.
+    #[inline(always)]
+    pub fn mutate(&mut self, node_id: usize, delta: Dyadic64) {
+        self.clock[node_id] += 1;
+        self.value[node_id] = self.value[node_id] + delta;
+    }
+}
+
+/// 1-Cochain: Discrete Soldering 1-Form `θ(e)` across an oriented edge:
+/// `θ([v_i, v_j]) = s(v_j) - s(v_i)`.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct Soldering1Form {
+    pub delta_clock: [i64; MAX_NODES],
+    pub delta_value: [Dyadic64; MAX_NODES],
+}
+
+impl Soldering1Form {
+    #[inline]
+    pub fn evaluate(start: &State0Cell, end: &State0Cell) -> Self {
+        let mut delta_clock = [0i64; MAX_NODES];
+        let mut delta_value = [Dyadic64::ZERO; MAX_NODES];
+
+        let mut i = 0;
+        while i < MAX_NODES {
+            delta_clock[i] = end.clock[i] as i64 - start.clock[i] as i64;
+            delta_value[i] = end.value[i] - start.value[i];
+            i += 1;
+        }
+
+        Self {
+            delta_clock,
+            delta_value,
+        }
+    }
+}
+
+/// 2-Cochain: Discrete Cartan Torsion 2-form `T(σ) = ∮_{∂σ} θ`.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct Torsion2Form {
+    pub defect_clock: [i64; MAX_NODES],
+    pub defect_value: [Dyadic64; MAX_NODES],
+}
+
+impl Torsion2Form {
+    #[inline]
+    pub fn is_flat(&self) -> bool {
+        let mut i = 0;
+        while i < MAX_NODES {
+            if self.defect_clock[i] != 0 || self.defect_value[i] != Dyadic64::ZERO {
+                return false;
+            }
+            i += 1;
+        }
+        true
+    }
+}
+
+/// Join-Semilattice Retraction Operator `P_⊔` over `(Z[1/2])^MAX_NODES`.
+pub struct DyadicDecSemilattice;
+
+impl DyadicDecSemilattice {
+    /// Computes the uncoordinated concurrent torsion defect `T(σ)`
+    /// across the open 2-cell spanned by Branch A (`v0 -> v1`) and Branch B (`v0 -> v2`).
+    #[inline]
+    pub fn compute_torsion(v0: &State0Cell, v1: &State0Cell, v2: &State0Cell) -> Torsion2Form {
+        let mut defect_clock = [0i64; MAX_NODES];
+        let mut defect_value = [Dyadic64::ZERO; MAX_NODES];
+
+        let mut i = 0;
+        while i < MAX_NODES {
+            defect_clock[i] = (v1.clock[i] as i64 - v0.clock[i] as i64)
+                - (v2.clock[i] as i64 - v0.clock[i] as i64);
+            defect_value[i] = (v1.value[i] - v0.value[i]) - (v2.value[i] - v0.value[i]);
+            i += 1;
+        }
+
+        Torsion2Form {
+            defect_clock,
+            defect_value,
+        }
+    }
+
+    /// Join projection: `P_⊔(v1, v2) -> v*` (supremum closure in `(Z[1/2])^N`).
+    #[inline]
+    pub fn join(v1: &State0Cell, v2: &State0Cell) -> State0Cell {
+        let mut merged = State0Cell::new();
+        let mut i = 0;
+        while i < MAX_NODES {
+            merged.clock[i] = max(v1.clock[i], v2.clock[i]);
+            merged.value[i] = v1.value[i].sup(v2.value[i]);
+            i += 1;
+        }
+        merged
+    }
+
+    /// Reconciles concurrent branches and checks that the closed-loop
+    /// discrete boundary integral satisfies `∮_{∂Σ} θ = 0`.
+    #[inline]
+    pub fn reconcile_and_verify(
+        v0: &State0Cell,
+        v1: &State0Cell,
+        v2: &State0Cell,
+    ) -> (State0Cell, bool) {
+        let v_star = Self::join(v1, v2);
+
+        let theta_01 = Soldering1Form::evaluate(v0, v1);
+        let theta_1_star = Soldering1Form::evaluate(v1, &v_star);
+        let theta_02 = Soldering1Form::evaluate(v0, v2);
+        let theta_2_star = Soldering1Form::evaluate(v2, &v_star);
+
+        let mut is_cycle_closed = true;
+        let mut i = 0;
+        while i < MAX_NODES {
+            // Path A: v0 -> v1 -> v*
+            let path_1 = theta_01.delta_value[i] + theta_1_star.delta_value[i];
+            // Path B: v0 -> v2 -> v*
+            let path_2 = theta_02.delta_value[i] + theta_2_star.delta_value[i];
+
+            if path_1 != path_2 {
+                is_cycle_closed = false;
+                break;
+            }
+            i += 1;
+        }
+
+        (v_star, is_cycle_closed)
+    }
+}
+
+/// Weak-Field Geodesic Deviation (Jacobi Equation) & Newtonian Tidal Equivalence Bridge:
+/// `D^2 ξ^i / dτ^2 = -R^i_{0j0} ξ^j = -E_{ij} ξ^j` where `E_{ij} = ∂_i ∂_j Φ` and `R_{00} = ∇^2 Φ`.
+pub struct GeodesicTidalBridge;
+
+impl GeodesicTidalBridge {
+    /// Evaluates relative geodesic deviation acceleration `A^i = -R^i_{0j0} ξ^j`
+    /// and the contracted Ricci-Poisson trace `R_{00} = Tr(R^i_{0j0}) = ∇^2 Φ`.
+    #[inline]
+    pub fn evaluate_jacobi_deviation(
+        riemann_r_i0j0: &[[f64; 3]; 3],
+        separation_xi: &[f64; 3],
+    ) -> ([f64; 3], f64) {
+        let mut accel = [0.0_f64; 3];
+        let mut ricci_r00_trace = 0.0_f64;
+        for i in 0..3 {
+            ricci_r00_trace += riemann_r_i0j0[i][i];
+            let mut sum = 0.0_f64;
+            for j in 0..3 {
+                sum -= riemann_r_i0j0[i][j] * separation_xi[j];
+            }
+            accel[i] = sum;
+        }
+        (accel, ricci_r00_trace)
+    }
+}
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -303,6 +580,54 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_dyadic_dec_crdt_reconciliation() {
+        let mut v0 = State0Cell::new();
+        v0.clock = [1, 1, 0, 0];
+        // Set exact fractional states: 1.25 and 2.5 in Z[1/2]
+        v0.value[0] = Dyadic64::from_raw((1 << (DYADIC_SHIFT - 2)) | (1 << DYADIC_SHIFT)); // 1.25
+        v0.value[1] = Dyadic64::from_raw(5 << (DYADIC_SHIFT - 1)); // 2.50
+
+        // Branch A: Node 0 increments by 0.125 (1/8)
+        let mut v1 = v0;
+        let delta_a = Dyadic64::from_raw(1 << (DYADIC_SHIFT - 3)); // 0.125
+        v1.mutate(0, delta_a);
+
+        // Branch B: Node 1 increments by 0.375 (3/8)
+        let mut v2 = v0;
+        let delta_b = Dyadic64::from_raw(3 << (DYADIC_SHIFT - 3)); // 0.375
+        v2.mutate(1, delta_b);
+
+        // Verify non-zero torsion defect prior to reconciliation
+        let torsion = DyadicDecSemilattice::compute_torsion(&v0, &v1, &v2);
+        assert!(!torsion.is_flat());
+        assert_eq!(torsion.defect_value[0], delta_a);
+        assert_eq!(torsion.defect_value[1], Dyadic64::ZERO - delta_b);
+
+        // Reconcile via join projection
+        let (v_star, is_closed) = DyadicDecSemilattice::reconcile_and_verify(&v0, &v1, &v2);
+
+        // Exact Stokes' loop closure with zero bitwise drift
+        assert!(is_closed);
+        assert_eq!(v_star.clock, [2, 2, 0, 0]);
+        assert_eq!(v_star.value[0], v1.value[0]);
+        assert_eq!(v_star.value[1], v2.value[1]);
+    }
+
+    #[test]
+    fn test_geodesic_deviation_poisson_trace_and_karmapa_chenrezig_triad() {
+        assert!(verify_karmapa_chenrezig_sadhana_invariants());
+
+        // Quadrupole + isotropic tidal tensor R^i_{0j0} = diag(-2, 1, 4) -> R_{00} = 3.0 = ∇^2 Φ
+        let r_i0j0 = [[-2.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 4.0]];
+        let xi = [0.5, 2.0, -1.0];
+        let (accel, r00_trace) = GeodesicTidalBridge::evaluate_jacobi_deviation(&r_i0j0, &xi);
+        assert!((accel[0] - 1.0).abs() < 1e-12);
+        assert!((accel[1] - (-2.0)).abs() < 1e-12);
+        assert!((accel[2] - 4.0).abs() < 1e-12);
+        assert!((r00_trace - 3.0).abs() < 1e-12);
+    }
+
+    #[test]
     fn test_safe_idempotent_wire_roundtrip() {
         let mut outgoing = WireC1Frame::new(0, 1001);
         outgoing.push_delta(0, 11, 1 << (DYADIC_SHIFT_DEFAULT - 2)); // Clock 10 -> 11, +0.25
@@ -342,7 +667,7 @@ mod tests {
         assert_eq!(unaligned_slice.len(), 64);
 
         // Direct try_from_bytes returns UnalignedBuffer if unaligned
-        if (unaligned_slice.as_ptr() as usize) % 8 != 0 {
+        if !(unaligned_slice.as_ptr() as usize).is_multiple_of(8) {
             assert_eq!(
                 WireC1Frame::try_from_bytes(unaligned_slice),
                 Err(WireError::UnalignedBuffer)

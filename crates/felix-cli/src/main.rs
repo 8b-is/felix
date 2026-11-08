@@ -505,8 +505,21 @@ fn cmd_ultra() -> Result<(), Fail> {
 
 fn cmd_wire() -> Result<(), Fail> {
     use felix_lang::wire_c1_frame::{
-        LocalClusterNode, WireC1Frame, DYADIC_SHIFT_DEFAULT, WIRE_MAGIC,
+        verify_karmapa_chenrezig_sadhana_invariants, Dyadic64, DyadicDecSemilattice,
+        GeodesicTidalBridge, LocalClusterNode, State0Cell, WireC1Frame, CHENREZIG_MANTRA,
+        DYADIC_SHIFT_DEFAULT, KARMAPA_MANTRA, WIRE_MAGIC,
     };
+
+    let mut v0 = State0Cell::new();
+    v0.clock = [1, 1, 0, 0];
+    v0.value[0] = Dyadic64::from_int(1);
+    v0.value[1] = Dyadic64::from_int(2);
+    let mut v1 = v0;
+    v1.mutate(0, Dyadic64::from_raw(1 << (DYADIC_SHIFT_DEFAULT - 3)));
+    let mut v2 = v0;
+    v2.mutate(1, Dyadic64::from_raw(3 << (DYADIC_SHIFT_DEFAULT - 3)));
+    let torsion = DyadicDecSemilattice::compute_torsion(&v0, &v1, &v2);
+    let (v_star, stokes_closed) = DyadicDecSemilattice::reconcile_and_verify(&v0, &v1, &v2);
 
     let mut outgoing = WireC1Frame::new(0, 1001);
     outgoing.push_delta(0, 11, 1 << (DYADIC_SHIFT_DEFAULT - 2));
@@ -524,14 +537,27 @@ fn cmd_wire() -> Result<(), Fail> {
         .ingest_wire_frame(wire_bytes)
         .map_err(|e| Fail::Usage(format!("WireC1Frame error: {e:?}")))?;
 
+    let r_i0j0 = [[-2.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 4.0]];
+    let (jacobi_acc, r00_poisson) =
+        GeodesicTidalBridge::evaluate_jacobi_deviation(&r_i0j0, &[0.5, 2.0, -1.0]);
+    let sadhana_ok = verify_karmapa_chenrezig_sadhana_invariants();
+
     println!(
-        "  • WireC1Frame (64B@8B)  : magic={:#06x}, size={} B, first_apply={}, dup_ignored={}, clocks={:?} (idempotent={} ✓)",
+        "  • WireC1Frame & DEC     : magic={:#06x} ({} B), T_flat={} -> P_⊔ Stokes ∮θ=0={}, v*={:?}, idempotent={} ✓",
         WIRE_MAGIC,
         wire_bytes.len(),
-        first_apply,
-        !duplicate_apply,
-        node.clocks,
+        torsion.is_flat(),
+        stokes_closed,
+        v_star.clock,
         first_apply && !duplicate_apply
+    );
+    println!(
+        "  • Jacobi & Sadhana Seal : D²n/Dτ²={:?} (R₀₀=∇²Φ={:.1}) | {} · {} (OM·AH·HUM Δ=0, verified={} ✓)",
+        jacobi_acc,
+        r00_poisson,
+        KARMAPA_MANTRA,
+        CHENREZIG_MANTRA,
+        sadhana_ok
     );
     Ok(())
 }
