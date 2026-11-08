@@ -592,8 +592,8 @@ pub fn build_canonical_mem8_recall_module(version: u32) -> Result<FelixPhoenixMo
     )
 }
 
-/// The 25 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_codegen_spark` + `embedded_quant_peter` + `felix_fpga_axis_spark` + `galaxia_crdt_spark` + `ljodatal_18_spark` + `agp_iommu_tlb_spark` + `mind_all_neuro_spark` + `well_signal_spqt_spark` + `phoenix_cap_abi_spark` + `m8_commerce_webhook_spark` + `erdos_pqt_spark` + `signed_ternary_graph_spark` + `q6_hamming_spark` + `quant_ultra_graphs_spark` + `lora_sack_rto_spark` + `felix_bench`).
-pub const SPARK_ARC_PACKAGES: [&str; 25] = [
+/// The 26 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_codegen_spark` + `embedded_quant_peter` + `felix_fpga_axis_spark` + `galaxia_crdt_spark` + `ljodatal_18_spark` + `agp_iommu_tlb_spark` + `mind_all_neuro_spark` + `well_signal_spqt_spark` + `phoenix_cap_abi_spark` + `m8_commerce_webhook_spark` + `erdos_pqt_spark` + `signed_ternary_graph_spark` + `q6_hamming_spark` + `quant_ultra_graphs_spark` + `lora_sack_rto_spark` + `stringtemplate5_pq_spark` + `felix_bench`).
+pub const SPARK_ARC_PACKAGES: [&str; 26] = [
     "felix_nand_tcb",
     "felix_front",
     "felix_type",
@@ -616,6 +616,7 @@ pub const SPARK_ARC_PACKAGES: [&str; 25] = [
     "q6_hamming_spark",
     "quant_ultra_graphs_spark",
     "lora_sack_rto_spark",
+    "stringtemplate5_pq_spark",
     "phoenix_linker",
     "phoenix_vm",
     "felix_bench",
@@ -771,10 +772,10 @@ mod tests {
             .and_then(|p| p.parent())
             .expect("workspace root")
             .join("ada");
-        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 25 Ada/SPARK packages");
-        assert_eq!(audit.packages_verified, 25);
-        assert_eq!(audit.total_files, 50);
-        assert_eq!(audit.spark_mode_on_count, 50);
-        assert_eq!(audit.no_heap_restrictions_count, 50);
+        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 26 Ada/SPARK packages");
+        assert_eq!(audit.packages_verified, 26);
+        assert_eq!(audit.total_files, 52);
+        assert_eq!(audit.spark_mode_on_count, 52);
+        assert_eq!(audit.no_heap_restrictions_count, 52);
     }
 }

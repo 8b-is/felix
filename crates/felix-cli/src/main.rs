@@ -74,6 +74,7 @@ fn dispatch(args: &[String]) -> Result<(), Fail> {
         ["inference"] | ["--inference"] | ["hypercube"] | ["--hypercube"] => cmd_inference(),
         ["ultra"] | ["--ultra"] | ["quant-ultra-graphs"] | ["--quant-ultra-graphs"] => cmd_ultra(),
         ["wire"] | ["--wire"] | ["c1"] | ["--c1"] => cmd_wire(),
+        ["st5"] | ["--st5"] | ["stringtemplate5"] | ["--stringtemplate5"] => cmd_st5(),
         ["-"] => cmd_run(&read("-")?),
         [path] if !path.starts_with('-') && !is_command(path) => cmd_run(&read(path)?),
         [command, ..] if is_command(command) => {
@@ -104,6 +105,8 @@ fn is_command(word: &str) -> bool {
             | "quant-ultra-graphs"
             | "wire"
             | "c1"
+            | "st5"
+            | "stringtemplate5"
     )
 }
 
@@ -506,8 +509,10 @@ fn cmd_ultra() -> Result<(), Fail> {
 fn cmd_wire() -> Result<(), Fail> {
     use felix_lang::{
         lora_sack_rto::{
-            poll_expired_hole_gated, DutyCycleBand, IntegerVbfController, LfsrDither,
-            LoraCocoaSackTracker, LoraDutyCycleGate, LoraSackTracker, SackSlot, WINDOW_SIZE,
+            poll_expired_hole_gated, semtech_sx126x_toa_ms, ConstellationPhase, DutyCycleBand,
+            IntegerVbfController, LfsrDither, LoraCocoaSackTracker, LoraDutyCycleGate,
+            LoraSackTracker, PlusEscapeDetector, SackSlot, BOREALISCODES_IRELAND_RANK,
+            BOREALISCODES_PUBLIC_CONTRIBUTIONS, WINDOW_SIZE,
         },
         wire_c1_frame::{
             verify_karmapa_chenrezig_sadhana_invariants, Dyadic64, DyadicDecSemilattice,
@@ -639,6 +644,59 @@ fn cmd_wire() -> Result<(), Fail> {
         vbf_3x,
         deferred_outcome,
         ready_outcome
+    );
+
+    let mut escape = PlusEscapeDetector::new(PlusEscapeDetector::DEFAULT_GUARD_MS);
+    escape.on_byte(b'X', 100);
+    escape.on_byte(b'+', 1_200);
+    escape.on_byte(b'+', 1_300);
+    escape.on_byte(b'+', 1_400);
+    let merged_mode = escape.poll_tick(2_500);
+    let toa_sf7 = semtech_sx126x_toa_ms(7, 125, 64, 5, true, true);
+    let toa_sf12 = semtech_sx126x_toa_ms(12, 125, 64, 5, true, true);
+    let phase_cycle = [
+        ConstellationPhase::Unify,
+        ConstellationPhase::Unify.next(),
+        ConstellationPhase::Unify.next().next(),
+        ConstellationPhase::Unify.next().next().next(),
+    ];
+    println!(
+        "  • Borealiscodes +++     : #{} IE ({} contribs) | mode={:?}, phases={:?}, SX126x_ToA(SF7={}ms, SF12_LDRO={}ms) (Tenma·Taixi·Lunge·Wukong ✓)",
+        BOREALISCODES_IRELAND_RANK,
+        BOREALISCODES_PUBLIC_CONTRIBUTIONS,
+        merged_mode,
+        phase_cycle,
+        toa_sf7,
+        toa_sf12
+    );
+    cmd_st5()?;
+    Ok(())
+}
+
+fn cmd_st5() -> Result<(), Fail> {
+    use felix_lang::{
+        stringtemplate5_pq::{
+            synthesize_dyadic_shift_add, synthesize_q8_multiply_shift,
+            verify_stringtemplate5_pq_pantheon,
+        },
+        Ratio,
+    };
+
+    let cert = verify_stringtemplate5_pq_pantheon().map_err(Fail::Usage)?;
+    let vbf_3x_expr = synthesize_dyadic_shift_add(Ratio::new(3, 1).unwrap(), "rto");
+    let vbf_1_3x_shift = synthesize_dyadic_shift_add(Ratio::new(83, 64).unwrap(), "rto");
+    let vbf_1_3x_q8 = synthesize_q8_multiply_shift(Ratio::new(13, 10).unwrap(), "rto");
+
+    println!(
+        "  • StringTemplate5 p/q   : HYDRA[Rust/Ada/Prolog/SV] | 3x=`{}`, 1.3x_3tap=`{}`, 1.3x_Q8=`{}` | Samsara_depth={}, BSD3_ok={}, Tartan_SPQT={:#04x}, Sun&*Moon={} (sha256={}.. ✓)",
+        vbf_3x_expr,
+        vbf_1_3x_shift,
+        vbf_1_3x_q8,
+        cert.samsara_max_dag_depth,
+        cert.license_bsd3_verified,
+        cert.tartan_spqt_base243_seal,
+        cert.solar_lunar_unity_verified,
+        &cert.phoenix_pct_sha256_hex[..16]
     );
     Ok(())
 }

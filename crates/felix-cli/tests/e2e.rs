@@ -246,6 +246,18 @@ fn wire_c1_frame_and_ultra_subcommands_verify_end_to_end() {
     assert!(wire_txt.contains("CoCoA strong_srtt_x8=2880, weak_srtt_x8=3200, blended=712ms"));
     assert!(wire_txt.contains("CoCoA VBF & Duty Gate : VBF_Fast3x(400ms)=1200ms"));
     assert!(wire_txt.contains("DeferredByDutyCycle { seq: 0, wait_ms: 48800 }"));
+    assert!(
+        wire_txt.contains("Borealiscodes +++     : #3 IE (14562 contribs) | mode=CommandMergeMode")
+    );
+    assert!(wire_txt
+        .contains("StringTemplate5 p/q   : HYDRA[Rust/Ada/Prolog/SV] | 3x=`rto + (rto << 1)`"));
+    assert!(wire_txt.contains("1.3x_3tap=`rto + (rto >> 2) + (rto >> 5) + (rto >> 6)`"));
+    assert!(wire_txt.contains("1.3x_Q8=`((rto * 333) >> 8)`"));
+    assert!(wire_txt.contains("Samsara_depth=0, BSD3_ok=true, Tartan_SPQT=0xe3, Sun&*Moon=true"));
+
+    let st5_out = felix(&["st5"], None);
+    assert!(st5_out.status.success(), "{}", text(&st5_out.stderr));
+    assert!(text(&st5_out.stdout).contains("StringTemplate5 p/q"));
 
     let ultra_out = felix(&["ultra"], None);
     assert!(ultra_out.status.success(), "{}", text(&ultra_out.stderr));

@@ -73,6 +73,7 @@ pub mod ratio;
 pub mod self_other_hypercube_inference;
 pub mod signed_ternary_graph;
 pub mod spacetime_silk_wormhole_router;
+pub mod stringtemplate5_pq;
 pub mod typeck;
 pub mod well_signal_resolution;
 pub mod well_signal_spqt_espnow;
@@ -88,7 +89,9 @@ pub use check::{Checked, Type};
 pub use diag::{Diagnostic, Span};
 pub use eval::{Output, Value, VaultId};
 pub use lexer::Token;
+pub use lora_sack_rto::{ConstellationPhase, PlusEscapeDetector, TransceiverMode};
 pub use ratio::Ratio;
+pub use wire_c1_frame::{FrameKind, LocalClusterNode, WireC1Frame, WireError};
 
 /// Parse, check, and run a program. The one entry point most callers want.
 pub fn run(source: &str) -> Result<Vec<Output>, Vec<Diagnostic>> {

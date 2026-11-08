@@ -315,6 +315,22 @@ impl LfsrDither {
         let jitter = ((rto_ms as u64) * u) >> 9; // u / 512 in [0.0, 0.498]
         rto_ms.saturating_add(jitter as u32)
     }
+
+    /// Generates a 32-bit pseudorandom integer using Galois LFSR + Marsaglia `[13, 17, 5]` Xorshift32.
+    #[inline]
+    pub fn next_u32(&mut self) -> u32 {
+        let _ = self.next_u8();
+        self.state
+    }
+
+    /// Applies full-jitter swarm dithering over `[rto_ms, 2 * rto_ms]` without division:
+    /// `rto_ms + (((rto_ms as u64) * (rand32 as u64)) >> 32) as u32`.
+    #[inline]
+    pub fn dither_full_jitter_2x(&mut self, rto_ms: u32) -> u32 {
+        let rand32 = self.next_u32() as u64;
+        let jitter = ((rto_ms as u64) * rand32) >> 32;
+        rto_ms.saturating_add(jitter as u32)
+    }
 }
 
 /// Single Fixed-Point Jacobson/Karels Bank (used for Strong `K = 4` and Weak `K = 1`).
@@ -774,6 +790,22 @@ impl LoraDutyCycleGate {
         }
     }
 
+    /// Computes projected credits at `now_ms` without mutating the bucket (`0..=HOUR_CREDITS_MAX`).
+    #[inline]
+    pub const fn projected_credits(&self, now_ms: u32) -> u32 {
+        let elapsed_ms = now_ms.wrapping_sub(self.last_refill_ms);
+        if (elapsed_ms as i32) > 0 {
+            let cand = self.credits.saturating_add(elapsed_ms);
+            if cand > HOUR_CREDITS_MAX {
+                HOUR_CREDITS_MAX
+            } else {
+                cand
+            }
+        } else {
+            self.credits
+        }
+    }
+
     /// Refills 1 credit per elapsed millisecond (capped at `HOUR_CREDITS_MAX`).
     #[inline]
     pub fn refill(&mut self, now_ms: u32) {
@@ -785,11 +817,12 @@ impl LoraDutyCycleGate {
         }
     }
 
-    /// Returns `Ok(())` if transmission of `toa_ms` is permitted at `now_ms`, or
-    /// `Err(wait_ms)` indicating the exact millisecond delay until both `T_off` and credits clear.
+    /// Read-only check (`P6 Check-Then-Commit Split`): returns `Ok(())` if transmission of `toa_ms`
+    /// is permitted at `now_ms`, or `Err(wait_ms)` with the exact millisecond delay until both
+    /// `T_off` and rolling-hour credits clear.
     #[inline]
-    pub fn check_ready(&mut self, now_ms: u32, toa_ms: u32) -> Result<(), u32> {
-        self.refill(now_ms);
+    pub const fn check_ready(&self, now_ms: u32, toa_ms: u32) -> Result<(), u32> {
+        let effective_credits = self.projected_credits(now_ms);
 
         // 1. Check per-packet T_off quiet horizon
         let quiet_rem = self.next_tx_allowed_ms.wrapping_sub(now_ms) as i32;
@@ -797,7 +830,7 @@ impl LoraDutyCycleGate {
 
         // 2. Check rolling-hour token bucket balance
         let cost = self.band.credit_cost(toa_ms);
-        let wait_credit_ms = cost.saturating_sub(self.credits);
+        let wait_credit_ms = cost.saturating_sub(effective_credits);
 
         let total_wait_ms = if wait_quiet_ms > wait_credit_ms {
             wait_quiet_ms
@@ -812,11 +845,12 @@ impl LoraDutyCycleGate {
         }
     }
 
-    /// Commits a transmission of `toa_ms` at `now_ms`, deducting scaled credits
+    /// Commits a transmission of `toa_ms` at `now_ms`, refilling and deducting scaled credits
     /// and advancing `next_tx_allowed_ms` by `toa_ms + T_off`.
     #[inline]
     pub fn consume_airtime(&mut self, now_ms: u32, toa_ms: u32) -> Result<(), u32> {
         self.check_ready(now_ms, toa_ms)?;
+        self.refill(now_ms);
         let cost = self.band.credit_cost(toa_ms);
         let t_off = self.band.quiet_time_ms(toa_ms);
 
@@ -880,6 +914,189 @@ pub fn poll_expired_hole_gated(
         offset += 1;
     }
     PollRetransmitOutcome::NoExpiredHoles
+}
+
+// ============================================================================
+// Borealiscodes +++ Constellation Bridge (Unify · Breathe · Learn · Evolve)
+// ============================================================================
+
+/// External [`Borealiscodes`](https://github.com/Borealiscodes) public contribution anchor (#3 Ireland committer).
+pub const BOREALISCODES_PUBLIC_CONTRIBUTIONS: u32 = 14_562;
+/// Ireland GitHub committers leaderboard rank for `Borealiscodes`.
+pub const BOREALISCODES_IRELAND_RANK: u8 = 3;
+/// RFC 6675 SACK fast-retransmit threshold (3 SACKed segments ahead of hole).
+pub const SACK_FAST_RETX_THRESHOLD: u8 = 3;
+
+/// Represents the four-phase lifecycle of a unified Constellation node:
+/// - `Unify` (Dr. Kenzō Tenma's equal-value axiom / `Zhen Yi` True Intent)
+/// - `Breathe` (ETSI duty-cycle respiration / `Taixi` & tethering the Will-Horse `Yima`)
+/// - `Learn` (CoCoA Strong/Weak dual-bank & Lunge × Grimmer synthesis / taming `Xinyuan`)
+/// - `Evolve` (VBF `3x/2x/1.3x` + LFSR dithering / Sun Wukong `Douzhanshengfo`)
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ConstellationPhase {
+    /// Phase 1: State alignment, identity verification, and SACK window sync.
+    Unify = 0,
+    /// Phase 2: ETSI EN 300 220-2 quiet-time respiration and duty-cycle recharge.
+    Breathe = 1,
+    /// Phase 3: CoCoA Strong/Weak dual-bank RTT ingestion and SACK hole detection.
+    Learn = 2,
+    /// Phase 4: VBF (`3.0x` / `2.0x` / `1.3x`) scaling and LFSR+Xorshift32 swarm dithering.
+    Evolve = 3,
+}
+
+impl ConstellationPhase {
+    #[inline]
+    pub const fn next(self) -> Self {
+        match self {
+            Self::Unify => Self::Breathe,
+            Self::Breathe => Self::Learn,
+            Self::Learn => Self::Evolve,
+            Self::Evolve => Self::Unify,
+        }
+    }
+}
+
+/// Operating mode governed by the `+++` guard-time escape detector.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransceiverMode {
+    /// Transparent LoRa packet framing and SACK transport mode.
+    DataMode = 0,
+    /// Constellation introspection, reconfiguration, and diff-merge mode (`+++`).
+    CommandMergeMode = 1,
+}
+
+/// Deterministic `#![no_std]` detector for the classic `+++` escape sequence
+/// requiring `guard_ms` (default `1,000 ms`) of silence before and after three `+` bytes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PlusEscapeDetector {
+    pub mode: TransceiverMode,
+    pub plus_count: u8,
+    pub last_rx_ms: u32,
+    pub sequence_completed_ms: u32,
+    pub guard_ms: u32,
+}
+
+impl PlusEscapeDetector {
+    pub const DEFAULT_GUARD_MS: u32 = 1_000;
+
+    #[inline]
+    pub const fn new(guard_ms: u32) -> Self {
+        Self {
+            mode: TransceiverMode::DataMode,
+            plus_count: 0,
+            last_rx_ms: 0,
+            sequence_completed_ms: 0,
+            guard_ms,
+        }
+    }
+
+    /// Feeds an incoming byte at `now_ms` and tracks the `+++` guard-time window.
+    #[inline]
+    pub fn on_byte(&mut self, byte: u8, now_ms: u32) {
+        let idle_before = now_ms.wrapping_sub(self.last_rx_ms);
+        if byte == b'+' {
+            if self.plus_count == 0 {
+                if idle_before >= self.guard_ms {
+                    self.plus_count = 1;
+                }
+            } else if self.plus_count < 3 && idle_before < self.guard_ms {
+                self.plus_count += 1;
+                if self.plus_count == 3 {
+                    self.sequence_completed_ms = now_ms;
+                }
+            } else {
+                self.plus_count = 0;
+            }
+        } else {
+            self.plus_count = 0;
+        }
+        self.last_rx_ms = now_ms;
+    }
+
+    /// Evaluates whether the trailing guard silence has elapsed after `+++` to enter `CommandMergeMode`.
+    #[inline]
+    pub fn poll_tick(&mut self, now_ms: u32) -> TransceiverMode {
+        if self.plus_count == 3 {
+            let idle_after = now_ms.wrapping_sub(self.sequence_completed_ms);
+            if idle_after >= self.guard_ms {
+                self.mode = TransceiverMode::CommandMergeMode;
+                self.plus_count = 0;
+            }
+        }
+        self.mode
+    }
+
+    /// Returns the transceiver from `CommandMergeMode` (`+++`) back to transparent `DataMode` (`ATO`).
+    #[inline]
+    pub fn exit_to_data_mode(&mut self, now_ms: u32) {
+        self.mode = TransceiverMode::DataMode;
+        self.plus_count = 0;
+        self.last_rx_ms = now_ms;
+    }
+}
+
+/// RFC 1982 serial-number wrap-around comparison `(a - b) as i32 < 0`.
+#[inline]
+pub const fn rfc1982_seq_lt_u32(a: u32, b: u32) -> bool {
+    (a.wrapping_sub(b) as i32) < 0
+}
+
+/// Deterministic integer Semtech SX126x/SX127x Time-on-Air (`ToA`) in milliseconds
+/// across `SF7..=SF12` (`bw_khz` in `{125, 250, 500}`), automatically enabling Low Data Rate
+/// Optimization (`LDRO`) when $T_{\text{sym}} \ge 16\text{ ms}$ (`SF11`/`SF12` at $125\text{ kHz}$).
+#[inline]
+pub const fn semtech_sx126x_toa_ms(
+    sf: u8,
+    bw_khz: u16,
+    payload_bytes: u8,
+    coding_rate_denom: u8,
+    explicit_header: bool,
+    crc_on: bool,
+) -> u32 {
+    let sf_clamped = if sf < 7 {
+        7u32
+    } else if sf > 12 {
+        12u32
+    } else {
+        sf as u32
+    };
+    let bw = if bw_khz == 0 { 125u32 } else { bw_khz as u32 };
+    let cr = if coding_rate_denom < 5 {
+        1u32
+    } else if coding_rate_denom > 8 {
+        4u32
+    } else {
+        (coding_rate_denom - 4) as u32
+    };
+
+    // Symbol duration in microseconds: T_sym_us = (2^SF * 1000) / bw_khz
+    let t_sym_us = ((1u32 << sf_clamped) * 1_000) / bw;
+    let de = if t_sym_us >= 16_000 { 1u32 } else { 0u32 };
+    let ih = if explicit_header { 0u32 } else { 1u32 };
+    let crc = if crc_on { 1u32 } else { 0u32 };
+
+    // Numerator inside ceil: max(0, 8*PL - 4*SF + 28 + 16*CRC - 20*IH)
+    let lhs = 8u32
+        .saturating_mul(payload_bytes as u32)
+        .saturating_add(28)
+        .saturating_add(16 * crc);
+    let rhs = (4 * sf_clamped).saturating_add(20 * ih);
+    let num = lhs.saturating_sub(rhs);
+    let denom = 4 * (sf_clamped.saturating_sub(2 * de));
+    let ceil_blocks = if num == 0 {
+        0u32
+    } else {
+        num.saturating_add(denom - 1) / denom
+    };
+    let payload_symbols = 8u32.saturating_add(ceil_blocks.saturating_mul(cr + 4));
+
+    // Total time in microseconds = (T_preamble + T_payload) = ((8 + 4.25) + payload_symbols) * T_sym_us
+    // = (49 + 4 * payload_symbols) * T_sym_us / 4
+    let total_quarter_syms = 49u32.saturating_add(4 * payload_symbols);
+    let total_us = (total_quarter_syms as u64) * (t_sym_us as u64) / 4;
+    ((total_us + 999) / 1_000) as u32
 }
 
 #[cfg(test)]
@@ -1040,8 +1257,20 @@ mod tests {
         assert_eq!(gate_1pct.credits, HOUR_CREDITS_MAX - 50_000);
         assert_eq!(gate_1pct.next_tx_allowed_ms, 50_000);
         assert_eq!(gate_1pct.check_ready(10_000, 500), Err(40_000));
+        // Read-only check_ready (P6) does not mutate bucket state
+        assert_eq!(gate_1pct.credits, HOUR_CREDITS_MAX - 50_000);
+        assert_eq!(gate_1pct.check_ready(49_999, 500), Err(1));
         assert_eq!(gate_1pct.check_ready(50_000, 500), Ok(()));
+        gate_1pct.refill(HOUR_CREDITS_MAX);
         assert_eq!(gate_1pct.credits, HOUR_CREDITS_MAX);
+
+        // 10% sub-band (869.4 - 869.65 MHz): T_off = 9 * ToA = 4,500 ms, Cost = 10 * ToA = 5,000 credits
+        let mut gate_10pct = LoraDutyCycleGate::new(DutyCycleBand::Band10Percent, 0);
+        assert_eq!(DutyCycleBand::Band10Percent.quiet_time_ms(500), 4_500);
+        assert_eq!(DutyCycleBand::Band10Percent.credit_cost(500), 5_000);
+        assert_eq!(gate_10pct.consume_airtime(0, 500), Ok(()));
+        assert_eq!(gate_10pct.check_ready(4_999, 500), Err(1));
+        assert_eq!(gate_10pct.check_ready(5_000, 500), Ok(()));
 
         // Gated SACK poll test: verify DeferredByDutyCycle preserves retries == 0 and backoff_count == 0
         let mut slots = [SackSlot::default(); WINDOW_SIZE];
@@ -1080,5 +1309,47 @@ mod tests {
         ));
         assert_eq!(slots[0].retries, 1);
         assert_eq!(vbf.backoff_count, 1);
+    }
+
+    #[test]
+    fn test_borealiscodes_plus_escape_detector_and_sx126x_toa() {
+        let mut det = PlusEscapeDetector::new(PlusEscapeDetector::DEFAULT_GUARD_MS);
+        assert_eq!(det.mode, TransceiverMode::DataMode);
+
+        // Normal data byte at t = 500 ms -> DataMode
+        det.on_byte(b'A', 500);
+        // Too-early '+' at t = 1,200 ms (< 1000 ms guard silence after 500 ms) -> ignored
+        det.on_byte(b'+', 1_200);
+        assert_eq!(det.plus_count, 0);
+
+        // Guard silence of 1,000 ms elapsed at t = 2,200 ms -> first '+' accepted
+        det.on_byte(b'+', 2_200);
+        assert_eq!(det.plus_count, 1);
+        det.on_byte(b'+', 2_300);
+        assert_eq!(det.plus_count, 2);
+        det.on_byte(b'+', 2_400);
+        assert_eq!(det.plus_count, 3);
+
+        // Before trailing guard silence elapses (t = 3,000 ms < 2,400 + 1,000), still DataMode
+        assert_eq!(det.poll_tick(3_000), TransceiverMode::DataMode);
+        // After 1,000 ms trailing guard silence (t = 3,400 ms), transitions to CommandMergeMode!
+        assert_eq!(det.poll_tick(3_400), TransceiverMode::CommandMergeMode);
+
+        // Cycle through all 4 Constellation phases: Unify -> Breathe -> Learn -> Evolve -> Unify
+        let p0 = ConstellationPhase::Unify;
+        let p1 = p0.next();
+        let p2 = p1.next();
+        let p3 = p2.next();
+        assert_eq!(p1, ConstellationPhase::Breathe);
+        assert_eq!(p2, ConstellationPhase::Learn);
+        assert_eq!(p3, ConstellationPhase::Evolve);
+        assert_eq!(p3.next(), ConstellationPhase::Unify);
+
+        // Semtech SX126x ToA check: SF7 vs SF12 at 125 kHz (LDRO auto-enabled on SF12)
+        let toa_sf7 = semtech_sx126x_toa_ms(7, 125, 64, 5, true, true);
+        let toa_sf12 = semtech_sx126x_toa_ms(12, 125, 64, 5, true, true);
+        assert!((100..=150).contains(&toa_sf7));
+        assert!(toa_sf12 > 2_000);
+        assert!(rfc1982_seq_lt_u32(u32::MAX - 5, 10));
     }
 }
