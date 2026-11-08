@@ -1088,7 +1088,7 @@ pub const fn semtech_sx126x_toa_ms(
     let ceil_blocks = if num == 0 {
         0u32
     } else {
-        num.saturating_add(denom - 1) / denom
+        num.div_ceil(denom)
     };
     let payload_symbols = 8u32.saturating_add(ceil_blocks.saturating_mul(cr + 4));
 
@@ -1096,7 +1096,7 @@ pub const fn semtech_sx126x_toa_ms(
     // = (49 + 4 * payload_symbols) * T_sym_us / 4
     let total_quarter_syms = 49u32.saturating_add(4 * payload_symbols);
     let total_us = (total_quarter_syms as u64) * (t_sym_us as u64) / 4;
-    ((total_us + 999) / 1_000) as u32
+    total_us.div_ceil(1_000) as u32
 }
 
 #[cfg(test)]
