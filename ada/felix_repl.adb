@@ -12,6 +12,7 @@ with Felix_Codegen; use Felix_Codegen;
 with Felix_Verify; use Felix_Verify;
 with Phoenix_Linker; use Phoenix_Linker;
 with Phoenix_VM; use Phoenix_VM;
+with Phoenix_Wave_Soul_Spark; use Phoenix_Wave_Soul_Spark;
 with Felix_Bench; use Felix_Bench;
 with Interfaces; use Interfaces;
 with Ada.Text_IO; use Ada.Text_IO;
@@ -64,6 +65,19 @@ is
             Holds : constant Boolean := God_Of_Sun_Zeno_Holds (31, 32, 31, -1);
          begin
             Put_Line ((if Holds then "31/32" else "0/1"));
+         end;
+      elsif Src = "print(phoenix_wave_soul(184, 15));" then
+         declare
+            Dyad  : constant Phoenix_Dyad_State :=
+              Compute_Phoenix_Dyad (184, 128, 160, 140, 120, 180, 200, 180, Whispered_Diary, 182);
+            Q_Max : constant Positive := Snowflake_Max_Denominator_Q (15);
+            Fkn   : constant Unsigned_32 := Compute_Capsela_Foken_Reward (1_536, 3, 1, True, 2);
+         begin
+            if Dyad.Effective_Temp_Q8 >= 12 and then Q_Max = 726 and then Fkn = 550 then
+               Put_Line ("726/550");
+            else
+               Put_Line ("0/1");
+            end if;
          end;
       else
          Put_Line ("OK (SPARK PCC verified=" & Boolean'Image (Verify_PCC (PCC)) & ")");

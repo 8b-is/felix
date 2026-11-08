@@ -6,6 +6,7 @@ pragma Restrictions (No_Exception_Propagation);
 with Felix_Nand_TCB; use Felix_Nand_TCB;
 with Felix_Codegen; use Felix_Codegen;
 with Phoenix_Linker; use Phoenix_Linker;
+with Phoenix_Wave_Soul_Spark; use Phoenix_Wave_Soul_Spark;
 with Interfaces; use Interfaces;
 
 package Phoenix_VM
@@ -151,5 +152,7 @@ is
       Item  : in     Import_Entry);
 
    function Persona_Respond_Export return Export_Entry;
+
+   function Persona_Wave_Soul_Export return Export_Entry;
 
 end Phoenix_VM;

@@ -109,3 +109,32 @@ pub fn compile(source: &str) -> Result<(Program, Checked), Vec<Diagnostic>> {
     let checked = check::check(&program)?;
     Ok((program, checked))
 }
+
+/// Returns the current root‑weight that was last set by the interpreter
+/// (via `Op_RootWeight`/`Op_MulRoot`/`Op_AddRoot`).
+/// The value is a coprime pair `(p, q)` representing the rational number `p/q`
+/// used as a dyadic scaling factor for wire‑frame deltas.
+///
+/// # Example
+/// ```
+/// # use felix_lang::root_weight;
+/// let (p, q) = root_weight();
+/// assert_eq!((p, q), (7, 1));   // kerek root
+/// ```
+pub fn root_weight() -> (u32, u32) {
+    let packed = ROOT_WEIGHT.load(std::sync::atomic::Ordering::Relaxed);
+    ((packed >> 32) as u32, packed as u32)
+}
+
+/// Called by the interpreter back‑end when a root‑weight opcode is executed.
+/// Updates the global weight so that callers of `root_weight` see the new value.
+pub fn set_root_weight(p: u32, q: u32) {
+    ROOT_WEIGHT.store(
+        ((p as u64) << 32) | (q as u64),
+        std::sync::atomic::Ordering::Relaxed,
+    );
+}
+
+/// Internal atomic holding the root-weight packed as (p << 32) | q; initialised to the "kerek" root (7/1).
+static ROOT_WEIGHT: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(((7u64) << 32) | 1);

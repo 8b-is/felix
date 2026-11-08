@@ -52,20 +52,11 @@ impl QuantTernPQTensor {
 }
 
 /// Exact integer ternary GEMM (`sum_i acts[i] * trits[i]`) using widened `i32` accumulation
-/// (`i16::MIN = -32768` safe).
+/// (`i16::MIN = -32768` safe), accelerated via 8-lane NEON (`aarch64`) / SSE2 `PMADDWD` (`x86_64`)
+/// and 4-way unrolled branchless scalar tail (`crate::phoenix::felix_ternary_gemm_i32`).
 #[inline]
 pub fn felix_ternary_gemm_i32(acts: &[i16], trits: &[i8]) -> i32 {
-    let n = acts.len().min(trits.len());
-    let mut acc: i32 = 0;
-    for i in 0..n {
-        let a = acts[i] as i32;
-        match trits[i] {
-            1 => acc += a,
-            -1 => acc -= a,
-            _ => {}
-        }
-    }
-    acc
+    crate::phoenix::felix_ternary_gemm_i32(acts, trits)
 }
 
 /// Packs 5 balanced trits (`{-1, 0, +1}`) into a single SPQT Base-243 byte (`0..242`).

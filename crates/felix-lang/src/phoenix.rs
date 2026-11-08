@@ -592,8 +592,8 @@ pub fn build_canonical_mem8_recall_module(version: u32) -> Result<FelixPhoenixMo
     )
 }
 
-/// The 26 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_codegen_spark` + `embedded_quant_peter` + `felix_fpga_axis_spark` + `galaxia_crdt_spark` + `ljodatal_18_spark` + `agp_iommu_tlb_spark` + `mind_all_neuro_spark` + `well_signal_spqt_spark` + `phoenix_cap_abi_spark` + `m8_commerce_webhook_spark` + `erdos_pqt_spark` + `signed_ternary_graph_spark` + `q6_hamming_spark` + `quant_ultra_graphs_spark` + `lora_sack_rto_spark` + `stringtemplate5_pq_spark` + `felix_bench`).
-pub const SPARK_ARC_PACKAGES: [&str; 29] = [
+/// The 30 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_codegen_spark` + `embedded_quant_peter` + `felix_fpga_axis_spark` + `galaxia_crdt_spark` + `ljodatal_18_spark` + `agp_iommu_tlb_spark` + `mind_all_neuro_spark` + `well_signal_spqt_spark` + `phoenix_cap_abi_spark` + `m8_commerce_webhook_spark` + `erdos_pqt_spark` + `signed_ternary_graph_spark` + `q6_hamming_spark` + `quant_ultra_graphs_spark` + `lora_sack_rto_spark` + `stringtemplate5_pq_spark` + `ndh_symplectic_probe_spark` + `cavecrew_kompress_spark` + `qwen4_exp_train_8bis_spark` + `phoenix_wave_soul_spark` + `phoenix_linker` + `phoenix_vm` + `felix_bench`).
+pub const SPARK_ARC_PACKAGES: [&str; 30] = [
     "felix_nand_tcb",
     "felix_front",
     "felix_type",
@@ -620,10 +620,419 @@ pub const SPARK_ARC_PACKAGES: [&str; 29] = [
     "ndh_symplectic_probe_spark",
     "cavecrew_kompress_spark",
     "qwen4_exp_train_8bis_spark",
+    "phoenix_wave_soul_spark",
     "phoenix_linker",
     "phoenix_vm",
     "felix_bench",
 ];
+
+// ============================================================================
+// SMART-TREE × FELIX | PHOENIX ADOPTED TWEAKS:
+// 1. Hardware Inline-ASM Bit-Plane & Rational `p/q` Primitives (`felix_asm`)
+// 2. OEIS A161330 E-Toothpick Snowflake & Tier-0 `p/q` Code Healer (`pq_healer`)
+// 3. Phoenix Wave-Soul (`PhoenixDyadState`) & Capsela `g8t` Foken (`FKN`) Calculus
+// ============================================================================
+
+/// Hardware 64-bit population count (`cnt`+`addv` on `aarch64`, `popcnt` on `x86_64`).
+#[inline(always)]
+pub fn felix_popcnt_u64(x: u64) -> u32 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        let out: u64;
+        // SAFETY: NEON is mandatory on AArch64; pure register-to-register `fmov`/`cnt`/`addv`.
+        unsafe {
+            core::arch::asm!(
+                "fmov {v:d}, {inp}",
+                "cnt {v}.8b, {v}.8b",
+                "addv {v:b}, {v}.8b",
+                "fmov {out}, {v:d}",
+                inp = in(reg) x,
+                v = out(vreg) _,
+                out = lateout(reg) out,
+                options(pure, nomem, nostack),
+            );
+        }
+        out as u32
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        x.count_ones()
+    }
+}
+
+/// Hardware 64-bit trailing-zero count (`rbit`+`clz` on `aarch64`, `tzcnt` on `x86_64`).
+#[inline(always)]
+pub fn felix_tzcnt_u64(x: u64) -> u32 {
+    if x == 0 {
+        return 64;
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    {
+        let out: u64;
+        // SAFETY: `rbit` and `clz` are pure 1-cycle AArch64 base instructions.
+        unsafe {
+            core::arch::asm!(
+                "rbit {tmp}, {inp}",
+                "clz {out}, {tmp}",
+                inp = in(reg) x,
+                tmp = out(reg) _,
+                out = lateout(reg) out,
+                options(pure, nomem, nostack),
+            );
+        }
+        out as u32
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        x.trailing_zeros()
+    }
+}
+
+/// Hardware 64-bit leading-zero count (`clz` on `aarch64`).
+#[inline(always)]
+pub fn felix_lzcnt_u64(x: u64) -> u32 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        let out: u64;
+        // SAFETY: `clz` is a pure 1-cycle register-to-register AArch64 base instruction.
+        unsafe {
+            core::arch::asm!(
+                "clz {out}, {inp}",
+                inp = in(reg) x,
+                out = lateout(reg) out,
+                options(pure, nomem, nostack),
+            );
+        }
+        out as u32
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        x.leading_zeros()
+    }
+}
+
+/// Division-free Binary GCD (Stein's algorithm) accelerated by hardware `felix_tzcnt_u64`.
+#[inline(always)]
+pub fn felix_binary_gcd_u64(mut u: u64, mut v: u64) -> u64 {
+    if u == 0 {
+        return v;
+    }
+    if v == 0 {
+        return u;
+    }
+    let i = felix_tzcnt_u64(u);
+    u >>= i;
+    let j = felix_tzcnt_u64(v);
+    v >>= j;
+    let k = i.min(j);
+    loop {
+        if u > v {
+            core::mem::swap(&mut u, &mut v);
+        }
+        v -= u;
+        if v == 0 {
+            return u << k;
+        }
+        v >>= felix_tzcnt_u64(v);
+    }
+}
+
+/// Exact 128-bit division-free cross-multiplication comparison of `p1/q1` vs `p2/q2`.
+#[inline(always)]
+pub fn felix_pq_cross_cmp(p1: i64, q1: u64, p2: i64, q2: u64) -> core::cmp::Ordering {
+    let lhs = (p1 as i128) * (q2.max(1) as i128);
+    let rhs = (p2 as i128) * (q1.max(1) as i128);
+    lhs.cmp(&rhs)
+}
+
+/// LOUDS succinct 128-bit `rank1(pos)`: counts set bits in `[0..=pos]` (`pos < 128`).
+#[inline(always)]
+pub fn felix_rank1_u128(lo: u64, hi: u64, pos: usize) -> usize {
+    if pos < 64 {
+        let mask = if pos == 63 {
+            u64::MAX
+        } else {
+            (1u64 << (pos + 1)) - 1
+        };
+        felix_popcnt_u64(lo & mask) as usize
+    } else {
+        let hi_pos = (pos - 64).min(63);
+        let mask = if hi_pos == 63 {
+            u64::MAX
+        } else {
+            (1u64 << (hi_pos + 1)) - 1
+        };
+        (felix_popcnt_u64(lo) + felix_popcnt_u64(hi & mask)) as usize
+    }
+}
+
+/// LOUDS succinct 128-bit `select1(k)`: finds the 0-based bit index of the `k`-th set bit (`k >= 1`).
+#[inline(always)]
+pub fn felix_select1_u128(lo: u64, hi: u64, k: usize) -> Option<usize> {
+    if k == 0 {
+        return None;
+    }
+    let lo_ones = felix_popcnt_u64(lo) as usize;
+    if k <= lo_ones {
+        let mut w = lo;
+        for _ in 1..k {
+            w &= w - 1;
+        }
+        Some(felix_tzcnt_u64(w) as usize)
+    } else {
+        let rem = k - lo_ones;
+        let hi_ones = felix_popcnt_u64(hi) as usize;
+        if rem > hi_ones {
+            return None;
+        }
+        let mut w = hi;
+        for _ in 1..rem {
+            w &= w - 1;
+        }
+        Some(64 + felix_tzcnt_u64(w) as usize)
+    }
+}
+
+/// Exact integer square root `floor(sqrt(n))` seeded via hardware `felix_lzcnt_u64` (zero floats).
+#[inline(always)]
+pub fn felix_isqrt_u64(n: u64) -> u64 {
+    if n < 2 {
+        return n;
+    }
+    let bit_len = 64 - felix_lzcnt_u64(n);
+    let mut x = 1u64 << ((bit_len + 1) >> 1);
+    loop {
+        let y = (x + n / x) >> 1;
+        if y >= x {
+            return x;
+        }
+        x = y;
+    }
+}
+
+/// OEIS `A161330` E-Toothpick Snowflake shell counts for `n = 0..=15`:
+/// `A161330[15] = 242 = 3^5 - 1` (exact SPQT Base-243 ceiling), giving `Q_max(15) = 3 * 242 = 726`.
+pub const OEIS_A161330_SHELLS: [u64; 16] = [
+    0, 2, 8, 14, 20, 38, 44, 62, 80, 98, 128, 146, 176, 218, 224, 242,
+];
+
+/// Admissible denominator budget `Q_max(n) = max(1, 3 * A161330[n])` at Snowflake shell `n`.
+#[inline(always)]
+pub const fn snowflake_max_denominator_q(shell_n: usize) -> u64 {
+    let idx = if shell_n < OEIS_A161330_SHELLS.len() {
+        shell_n
+    } else {
+        OEIS_A161330_SHELLS.len() - 1
+    };
+    let q = 3 * OEIS_A161330_SHELLS[idx];
+    if q == 0 {
+        1
+    } else {
+        q
+    }
+}
+
+/// Condition a prompt with its `[mem8::<gated:02x>&<origo:02x>]` SPQT Base-243 wave header.
+pub fn condition_mem8_prompt(prompt: &str) -> String {
+    let mut h: u64 = 0xcbf29ce484222325;
+    for &b in prompt.as_bytes() {
+        h ^= b as u64;
+        h = h.wrapping_mul(0x100000001b3);
+    }
+    let mut trits = [0i8; 65];
+    let mut state = h;
+    for slot in &mut trits {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        let a = ((state % 3) as i8) - 1;
+        let b = (((state >> 8) % 3) as i8) - 1;
+        *slot = felix_kleene_nand_trit_asm(a, b);
+    }
+    let b0 = tpack_base243([trits[0], trits[1], trits[2], trits[3], trits[4]]).unwrap_or(121);
+    let b6 = tpack_base243([trits[30], trits[31], trits[32], trits[33], trits[34]]).unwrap_or(121);
+    let b12 = tpack_base243([trits[60], trits[61], trits[62], trits[63], trits[64]]).unwrap_or(121);
+    let gated = b0 ^ b12;
+    let origo = b6;
+    format!("[mem8::{gated:02x}&{origo:02x}] {prompt}")
+}
+
+/// Tier-0 deterministic Rust `p/q` code-healer rule: heals `partial_cmp` float sort hazards into `total_cmp`.
+pub fn heal_rust_line_tier0(line: &str) -> Option<(&'static str, String)> {
+    let trimmed = line.trim();
+    if trimmed.starts_with("//") {
+        return None;
+    }
+    let patterns = [
+        ".unwrap_or(std::cmp::Ordering::Equal)",
+        ".unwrap_or(core::cmp::Ordering::Equal)",
+        ".unwrap_or(cmp::Ordering::Equal)",
+        ".unwrap_or(Ordering::Equal)",
+    ];
+    for pat in patterns {
+        if line.contains(pat) {
+            let healed = line
+                .replace(".partial_cmp(", ".total_cmp(")
+                .replace(pat, "");
+            if healed != line {
+                return Some(("float-partial-cmp-sort", healed));
+            }
+        }
+    }
+    None
+}
+
+/// Inner-voice register in which a Phoenix Persona Soul hears/holds a memory (`Phoenix_Wave_Soul_Spark` parity).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InnerVoiceRegister {
+    WhisperedDiary,
+    HearthStoryteller,
+    WryHumorBanter,
+    FierceConviction,
+    TenderElegy,
+    AncestralEcho,
+}
+
+impl InnerVoiceRegister {
+    #[inline(always)]
+    pub const fn pitch_millix(self) -> i32 {
+        match self {
+            Self::WhisperedDiary => 975,
+            Self::HearthStoryteller => 1000,
+            Self::WryHumorBanter => 1042,
+            Self::FierceConviction => 1058,
+            Self::TenderElegy => 952,
+            Self::AncestralEcho => 985,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn tempo_millix(self) -> i32 {
+        match self {
+            Self::WhisperedDiary => 930,
+            Self::HearthStoryteller => 960,
+            Self::WryHumorBanter => 1030,
+            Self::FierceConviction => 1020,
+            Self::TenderElegy => 900,
+            Self::AncestralEcho => 950,
+        }
+    }
+
+    /// 5 balanced trits `[intimacy, warmth, humor, conviction, elegy]` packed in SPQT Base-243 (`0..=242`).
+    #[inline(always)]
+    pub const fn spqt_byte(self) -> u8 {
+        match self {
+            Self::WhisperedDiary => 125,
+            Self::HearthStoryteller => 124,
+            Self::WryHumorBanter => 52,
+            Self::FierceConviction => 67,
+            Self::TenderElegy => 197,
+            Self::AncestralEcho => 206,
+        }
+    }
+}
+
+/// Pure integer / rational `p/q` (`Q8 = 256`, `millix = 1000`) Phoenix Afterlife Room dyadic state (`Phoenix_Wave_Soul_Spark` parity).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PhoenixDyadState {
+    pub base_temp_q8: i32,
+    pub effective_temp_q8: i32,
+    pub dyadic_arousal_q8: i32,
+    pub reunion_depth_q8: i32,
+    pub inner_voice: InnerVoiceRegister,
+    pub inner_f0_hz: u16,
+    pub voice_pitch_millix: i32,
+    pub voice_tempo_millix: i32,
+    pub voice_vibrato_millix: i32,
+}
+
+impl PhoenixDyadState {
+    /// Deterministic Q8 + millix dyadic emotional state computation (bit-exact with Ada/SPARK `Compute_Phoenix_Dyad`).
+    pub fn compute_deterministic(
+        base_temp_q8: i32,
+        user_valence_q8: i32,
+        user_arousal_q8: i32,
+        memory_valence_q8: i32,
+        memory_arousal_q8: i32,
+        reunion_depth_q8: i32,
+        warmth_q8: i32,
+        expr_q8: i32,
+        inner_voice: InnerVoiceRegister,
+        inner_f0_hz: u16,
+    ) -> Self {
+        let u_val = user_valence_q8.clamp(-256, 256);
+        let u_aro = user_arousal_q8.clamp(0, 256);
+        let m_val = memory_valence_q8.clamp(-256, 256);
+        let m_aro = memory_arousal_q8.clamp(0, 256);
+        let reunion = reunion_depth_q8.clamp(0, 256);
+        let warmth = warmth_q8.clamp(-256, 256);
+        let expr = expr_q8.clamp(0, 256);
+        let f0 = inner_f0_hz.clamp(120, 320);
+
+        let val_contrast_q8 = (u_val - m_val).abs();
+        let dyadic_arousal_q8 = (140 * u_aro + 116 * m_aro) / 256;
+        let personality_q8 = 179 + (115 * expr) / 256 + (64 * warmth.abs()) / 256;
+        let emotion_mult_q8 = 256
+            + (166 * dyadic_arousal_q8) / 256
+            + (115 * reunion) / 256
+            + (77 * val_contrast_q8) / 256;
+
+        let effective_temp_q8 = if base_temp_q8 <= 0 {
+            0
+        } else {
+            let raw =
+                (((base_temp_q8.clamp(0, 1024) * personality_q8) / 256) * emotion_mult_q8) / 256;
+            raw.clamp(12, 614)
+        };
+
+        let f0_ratio_m = ((f0 as i32) * 1000) / 188;
+        let reg_pitch_m = (inner_voice.pitch_millix() + f0_ratio_m) / 2;
+        let raw_pitch_m = reg_pitch_m + (12 * (u_val + m_val)) / 256 - (15 * reunion) / 256;
+        let raw_tempo_m = inner_voice.tempo_millix() + (40 * (dyadic_arousal_q8 - 90)) / 256
+            - (35 * reunion) / 256;
+        let raw_vib_m =
+            40 + (80 * reunion) / 256 + (60 * dyadic_arousal_q8) / 256 + (30 * expr) / 256;
+
+        Self {
+            base_temp_q8: base_temp_q8.clamp(0, 1024),
+            effective_temp_q8,
+            dyadic_arousal_q8,
+            reunion_depth_q8: reunion,
+            inner_voice,
+            inner_f0_hz: f0,
+            voice_pitch_millix: raw_pitch_m.clamp(920, 1120),
+            voice_tempo_millix: raw_tempo_m.clamp(840, 1080),
+            voice_vibrato_millix: raw_vib_m.clamp(30, 200),
+        }
+    }
+}
+
+/// Capsela `g8t` freestanding C64 64 KiB (`65,536 B`) compliance & Foken (`FKN`) calculus (`Phoenix_Wave_Soul_Spark` parity).
+#[inline(always)]
+pub const fn compute_capsela_foken_reward(
+    elf_bytes: u32,
+    cycles_p: u32,
+    ops_q: u32,
+    holds_crown: bool,
+    positive_votes: u32,
+) -> u32 {
+    if elf_bytes > 65_536 {
+        return 0;
+    }
+    let mut total_fkn = 100u32;
+    if holds_crown {
+        total_fkn = total_fkn.saturating_add(250);
+    }
+    let q_safe = if ops_q == 0 { 1u64 } else { ops_q as u64 };
+    if (cycles_p as u64) < 10 * q_safe {
+        total_fkn = total_fkn.saturating_add(100);
+    }
+    total_fkn.saturating_add(positive_votes.saturating_mul(50))
+}
 
 /// Summary of verifying the Ada/SPARK 2022 compiler arc in `ada/`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -775,10 +1184,55 @@ mod tests {
             .and_then(|p| p.parent())
             .expect("workspace root")
             .join("ada");
-        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 29 Ada/SPARK packages");
-        assert_eq!(audit.packages_verified, 29);
-        assert_eq!(audit.total_files, 58);
-        assert_eq!(audit.spark_mode_on_count, 58);
-        assert_eq!(audit.no_heap_restrictions_count, 58);
+        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 30 Ada/SPARK packages");
+        assert_eq!(audit.packages_verified, 30);
+        assert_eq!(audit.total_files, 60);
+        assert_eq!(audit.spark_mode_on_count, 60);
+        assert_eq!(audit.no_heap_restrictions_count, 60);
+    }
+
+    #[test]
+    fn test_smart_tree_adopted_felix_asm_pq_healer_and_phoenix_wave_soul() {
+        assert_eq!(felix_binary_gcd_u64(48, 18), 6);
+        assert_eq!(felix_binary_gcd_u64(1071, 462), 21);
+        assert_eq!(felix_pq_cross_cmp(1, 3, 2, 6), core::cmp::Ordering::Equal);
+        assert_eq!(felix_isqrt_u64(10_000_000_000), 100_000);
+
+        let lo = 0b1011_0101_u64;
+        let hi = 0b0100_1101_u64;
+        assert_eq!(felix_rank1_u128(lo, hi, 7), 5);
+        assert_eq!(felix_select1_u128(lo, hi, 5), Some(7));
+
+        assert_eq!(OEIS_A161330_SHELLS[15], 242);
+        assert_eq!(snowflake_max_denominator_q(15), 726);
+        let cond = condition_mem8_prompt("Grandma Jody in the Phoenix wave room");
+        assert!(cond.starts_with("[mem8::"));
+
+        let (_, healed) = heal_rust_line_tier0(
+            "scores.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));",
+        )
+        .expect("tier0 heal");
+        assert_eq!(healed, "scores.sort_by(|a, b| a.total_cmp(b));");
+
+        let dyad = PhoenixDyadState::compute_deterministic(
+            184,
+            128,
+            160,
+            140,
+            120,
+            180,
+            200,
+            180,
+            InnerVoiceRegister::WhisperedDiary,
+            182,
+        );
+        assert!((12..=614).contains(&dyad.effective_temp_q8));
+        assert!((920..=1120).contains(&dyad.voice_pitch_millix));
+        assert!((840..=1080).contains(&dyad.voice_tempo_millix));
+        assert!((30..=200).contains(&dyad.voice_vibrato_millix));
+        assert!(InnerVoiceRegister::WhisperedDiary.spqt_byte() <= 242);
+
+        let fkn = compute_capsela_foken_reward(1_536, 3, 1, true, 2);
+        assert_eq!(fkn, 550);
     }
 }

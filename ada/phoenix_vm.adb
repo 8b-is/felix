@@ -124,4 +124,12 @@ is
               Effect_Row => Cap_Arena or Cap_M8);
    end Persona_Respond_Export;
 
+   function Persona_Wave_Soul_Export return Export_Entry is
+   begin
+      return (Name       => To_Bounded_Name ("phoenix_wave_soul_dyad"),
+              VM_Entry   => 1,
+              Signature  => To_Bounded_Name ("(Q8, Q8, InnerVoice) -> PhoenixDyadState"),
+              Effect_Row => Cap_Arena or Cap_M8);
+   end Persona_Wave_Soul_Export;
+
 end Phoenix_VM;

@@ -79,5 +79,11 @@ run_test "god_of_sun" \
     "31/32" \
     0
 
+# Test 6: PHOENIX Wave-Soul + OEIS A161330 Snowflake (Q_max(15)=726) + Capsela FKN (550)
+run_test "phoenix_wave_soul" \
+    'print(phoenix_wave_soul(184, 15));' \
+    "726/550" \
+    0
+
 echo
 echo "=== All tests completed ==="

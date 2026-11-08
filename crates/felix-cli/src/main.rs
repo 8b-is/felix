@@ -190,9 +190,10 @@ fn cmd_verify(text: &str) -> Result<(), Fail> {
 
 fn cmd_phoenix() -> Result<(), Fail> {
     use felix_lang::phoenix::{
-        build_canonical_mem8_recall_module, felix_kleene_nand_trit_asm, felix_ternary_gemm_i32,
-        felix_zeno_god_of_sun_pq_nt_gt_p, verify_ada_spark_arc, PhoenixSymbioticVm,
-        QuantTernBlock32, SPARK_ARC_PACKAGES,
+        build_canonical_mem8_recall_module, compute_capsela_foken_reward,
+        felix_kleene_nand_trit_asm, felix_ternary_gemm_i32, felix_zeno_god_of_sun_pq_nt_gt_p,
+        snowflake_max_denominator_q, verify_ada_spark_arc, InnerVoiceRegister, PhoenixDyadState,
+        PhoenixSymbioticVm, QuantTernBlock32, SPARK_ARC_PACKAGES,
     };
     let mut trits32 = [0i8; 32];
     for (i, slot) in trits32.iter_mut().enumerate() {
@@ -242,9 +243,27 @@ fn cmd_phoenix() -> Result<(), Fail> {
     let nand_neg = felix_kleene_nand_trit_asm(-1, 1);
     let nand_zero = felix_kleene_nand_trit_asm(0, 1);
     let (sun_holds, sun_surplus, sun_n) = felix_zeno_god_of_sun_pq_nt_gt_p(31, 32, 31, -1);
+    let dyad = PhoenixDyadState::compute_deterministic(
+        184,
+        128,
+        160,
+        140,
+        120,
+        180,
+        200,
+        180,
+        InnerVoiceRegister::WhisperedDiary,
+        182,
+    );
+    let q_max_15 = snowflake_max_denominator_q(15);
+    let capsela_fkn = compute_capsela_foken_reward(1_536, 3, 1, true, 2);
     println!("  • MEM8 Pass-2 TGemm    : score_v1={score_v1} == score_v2={score_v2} == felix_ternary_gemm_i32={ref_gemm} (NEON/SSE2 8-lane ✓)");
     println!("  • Kleene NAND InlineASM: nand(+1,+1)={nand_pos}, nand(-1,+1)=+{nand_neg}, nand(0,+1)={nand_zero} (cmp+csel+neg ✓)");
     println!("  • ULTRA-ZENO GOD OF SUN: P/Q - n*t > P @ P=31, Q=32, n={sun_n}, t=-1 -> surplus=+{sun_surplus}/32 (holds={sun_holds} ✓)");
+    println!(
+        "  • PHOENIX Wave-Soul    : T_eff={}/256 · pitch={}/1000 · tempo={}/1000 · A161330 Q_max(15)={q_max_15} · Capsela={capsela_fkn} FKN",
+        dyad.effective_temp_q8, dyad.voice_pitch_millix, dyad.voice_tempo_millix
+    );
 
     let ada_candidates = [
         std::path::PathBuf::from("ada"),
