@@ -1,0 +1,23 @@
+when:
+  - event: [push, pull_request, manual, cron]
+    branch: [main]
+  - event: tag
+    ref: refs/tags/v*
+
+steps:
+  chore-polish:
+    image: rust:latest
+    commands:
+      - rustup component add rustfmt clippy
+      - if [ ! -d ../memnet ]; then git clone https://github.com/8b-is/memnet.git ../memnet || git clone https://codeberg.org/8b-is/memnet.git ../memnet; fi
+      - ./scripts/codeberg_ci_agent.sh --chore-polish
+
+  release-publish:
+    image: rust:latest
+    when:
+      event: tag
+      ref: refs/tags/v*
+    commands:
+      - rustup component add rustfmt clippy
+      - if [ ! -d ../memnet ]; then git clone https://github.com/8b-is/memnet.git ../memnet || git clone https://codeberg.org/8b-is/memnet.git ../memnet; fi
+      - ./scripts/codeberg_ci_agent.sh --release

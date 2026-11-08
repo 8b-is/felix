@@ -1,0 +1,44 @@
+name: Codeberg Chore-Polish & Release Agent
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  chore-polish:
+    name: Chore-Polish (fmt, clippy -D warnings, SPARK invariants, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone companion memnet crate
+        run: |
+          if [ ! -d ../memnet ]; then
+            git clone https://github.com/8b-is/memnet.git ../memnet || true
+          fi
+      - name: Install Rust toolchain
+        run: |
+          rustup update stable
+          rustup component add rustfmt clippy
+      - name: Run Codeberg CI Chore-Polish Agent
+        run: ./scripts/codeberg_ci_agent.sh --chore-polish
+
+  release:
+    name: Automated Release Build & Checksums
+    needs: chore-polish
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone companion memnet crate
+        run: |
+          if [ ! -d ../memnet ]; then
+            git clone https://github.com/8b-is/memnet.git ../memnet || true
+          fi
+      - name: Build & Package Release
+        run: ./scripts/codeberg_ci_agent.sh --release
