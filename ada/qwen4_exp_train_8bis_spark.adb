@@ -51,4 +51,26 @@ is
              and then Peak * 24 = A6000_Total_Vram_Mib * 17;
    end Verify_A6000_Vram_Budget;
 
+   function Grpo_Advantage_Q15
+     (Reward_Q15 : Reward_Q15_Type;
+      Mean_Q15   : Reward_Q15_Type;
+      Std_Q15    : Std_Q15_Type) return Unsigned_32
+   is
+      Diff    : Unsigned_32;
+      Scaled  : Unsigned_32;
+      Clamped : Unsigned_32;
+   begin
+      if Reward_Q15 >= Mean_Q15 then
+         Diff    := Reward_Q15 - Mean_Q15;
+         Scaled  := (Diff * 4_096) / Std_Q15;
+         Clamped := (if Scaled > 32_767 then 32_767 else Scaled);
+         return 32_768 + Clamped;
+      else
+         Diff    := Mean_Q15 - Reward_Q15;
+         Scaled  := (Diff * 4_096) / Std_Q15;
+         Clamped := (if Scaled > 32_768 then 32_768 else Scaled);
+         return 32_768 - Clamped;
+      end if;
+   end Grpo_Advantage_Q15;
+
 end Qwen4_Exp_Train_8bis_Spark;

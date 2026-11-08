@@ -27,6 +27,8 @@ is
    subtype Seq_Length_Type is Unsigned_32 range 0 .. 1_048_576;
    subtype Compress_Ratio  is Unsigned_32 range 1 .. 256;
    subtype Coord_Range     is Integer_64 range -1_000_000_000 .. 1_000_000_000;
+   subtype Reward_Q15_Type is Unsigned_32 range 0 .. 32_768;
+   subtype Std_Q15_Type    is Unsigned_32 range 256 .. 8_192;
 
    A6000_Total_Vram_Mib : constant Unsigned_32 := 49_152;
    A6000_Peak_Vram_Mib  : constant Unsigned_32 := 34_816;
@@ -60,5 +62,19 @@ is
           Post => Verify_A6000_Vram_Budget'Result = True
                   and then A6000_Peak_Vram_Mib + A6000_Free_Vram_Mib = A6000_Total_Vram_Mib
                   and then A6000_Peak_Vram_Mib * 24 = A6000_Total_Vram_Mib * 17;
+
+   -- 5. Exact integer Q15 GRPO group-relative advantage (`32,768` zero-advantage baseline)
+   function Grpo_Advantage_Q15
+     (Reward_Q15 : Reward_Q15_Type;
+      Mean_Q15   : Reward_Q15_Type;
+      Std_Q15    : Std_Q15_Type) return Unsigned_32
+     with Inline,
+          Pre  => Std_Q15 >= 256,
+          Post => Grpo_Advantage_Q15'Result <= 65_535
+                  and then (if Reward_Q15 = Mean_Q15
+                            then Grpo_Advantage_Q15'Result = 32_768)
+                  and then (if Reward_Q15 >= Mean_Q15
+                            then Grpo_Advantage_Q15'Result >= 32_768
+                            else Grpo_Advantage_Q15'Result <= 32_768);
 
 end Qwen4_Exp_Train_8bis_Spark;

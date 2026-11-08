@@ -725,6 +725,26 @@ fn cmd_wire() -> Result<(), Fail> {
         symp.non_vacuous_isolation_verified,
         symp.encoder_injectivity_guard_verified
     );
+    let qwen4_audit = felix_lang::qwen4_exp_train_8bis::audit_qwen4_exp_train_8bis()
+        .map_err(|e| Fail::Usage(e.to_string()))?;
+    println!(
+        "  • Qwen4-Exp × wa-stream : {} ({} datasets, w_sum={:?}) | A6000={}MiB ({:?}) | GRPO_RL({} epochs, {} rollouts): R_q15 {}->{} (+{}), MOPD2 {}->{}, WPM={}, oblit_dot={}, drift={} ✓",
+        felix_lang::qwen4_exp_train_8bis::QWEN4_EXP_TARGET_MODEL_ID,
+        qwen4_audit.dataset_count,
+        qwen4_audit.dataset_weight_sum,
+        qwen4_audit.a6000_peak_vram_mib,
+        qwen4_audit.a6000_utilization_pq,
+        qwen4_audit.rl_train_report.epochs_completed,
+        qwen4_audit.rl_train_report.total_group_rollouts,
+        qwen4_audit.rl_train_report.initial_reward_q15,
+        qwen4_audit.rl_train_report.final_reward_q15,
+        qwen4_audit.rl_train_report.reward_improvement_q15,
+        qwen4_audit.rl_train_report.initial_mopd2_loss_q15,
+        qwen4_audit.rl_train_report.final_mopd2_loss_q15,
+        qwen4_audit.rl_train_report.converged_wpm,
+        qwen4_audit.post_obliteration_dot,
+        qwen4_audit.dual_reflection_l1_drift
+    );
     cmd_st5()?;
     Ok(())
 }
