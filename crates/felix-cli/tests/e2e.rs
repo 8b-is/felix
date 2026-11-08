@@ -243,6 +243,9 @@ fn wire_c1_frame_and_ultra_subcommands_verify_end_to_end() {
     assert!(wire_txt.contains("magic=0x8b15, size=64 B, first_apply=true, dup_ignored=true"));
     assert!(wire_txt.contains("idempotent=true ✓"));
     assert!(wire_txt.contains("LoRa SACK & Int RTO"));
+    assert!(wire_txt.contains("CoCoA strong_srtt_x8=2880, weak_srtt_x8=3200, blended=712ms"));
+    assert!(wire_txt.contains("CoCoA VBF & Duty Gate : VBF_Fast3x(400ms)=1200ms"));
+    assert!(wire_txt.contains("DeferredByDutyCycle { seq: 0, wait_ms: 48800 }"));
 
     let ultra_out = felix(&["ultra"], None);
     assert!(ultra_out.status.success(), "{}", text(&ultra_out.stderr));

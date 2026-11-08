@@ -505,7 +505,10 @@ fn cmd_ultra() -> Result<(), Fail> {
 
 fn cmd_wire() -> Result<(), Fail> {
     use felix_lang::{
-        lora_sack_rto::LoraSackTracker,
+        lora_sack_rto::{
+            poll_expired_hole_gated, DutyCycleBand, IntegerVbfController, LfsrDither,
+            LoraCocoaSackTracker, LoraDutyCycleGate, LoraSackTracker, SackSlot, WINDOW_SIZE,
+        },
         wire_c1_frame::{
             verify_karmapa_chenrezig_sadhana_invariants, Dyadic64, DyadicDecSemilattice,
             GeodesicTidalBridge, LocalClusterNode, State0Cell, WireC1Frame, CHENREZIG_MANTRA,
@@ -554,6 +557,50 @@ fn cmd_wire() -> Result<(), Fail> {
     let backed_off_rto = sack.rto.current_rto_ms();
     sack.on_ack_and_sack(103, 0, 1900);
 
+    let mut cocoa = LoraCocoaSackTracker::new(500, 120, 60, 30_000, 0x8B15_CAFE);
+    let _ = cocoa.on_transmit(500, 1000);
+    let _ = cocoa.on_transmit(501, 1000);
+    cocoa.on_ack_and_sack(500, 0b1, 1360);
+    let _ = cocoa.poll_expired_hole(2000);
+    cocoa.on_ack_and_sack(502, 0, 2400);
+    let cocoa_blended_rto = cocoa.estimator.rto_base_ms;
+    let cocoa_dithered_rto = cocoa.estimator.next_dithered_rto_ms();
+
+    let mut gated_slots = [SackSlot::default(); WINDOW_SIZE];
+    gated_slots[0] = SackSlot {
+        seq: 0,
+        first_tx_ms: 0,
+        last_tx_ms: 0,
+        deadline_ms: 1_200,
+        retries: 0,
+        in_use: true,
+        sacked: false,
+    };
+    let mut vbf = IntegerVbfController::new(400, 200, 60_000);
+    let vbf_3x = vbf.step_vbf_on_timeout(false);
+    vbf.sync_from_base(1_200, true);
+    let mut dither = LfsrDither::new(0xACE1);
+    let mut gate = LoraDutyCycleGate::new(DutyCycleBand::Band1Percent, 0);
+    let _ = gate.consume_airtime(0, 500);
+    let deferred_outcome = poll_expired_hole_gated(
+        &mut gated_slots,
+        0,
+        &mut vbf,
+        &mut dither,
+        &mut gate,
+        500,
+        1_200,
+    );
+    let ready_outcome = poll_expired_hole_gated(
+        &mut gated_slots,
+        0,
+        &mut vbf,
+        &mut dither,
+        &mut gate,
+        500,
+        50_000,
+    );
+
     println!(
         "  • WireC1Frame (64B@8B)  : magic={:#06x}, size={} B, first_apply={}, dup_ignored={}, T_flat={} -> P_⊔ Stokes ∮θ=0={}, v*={:?}, idempotent={} ✓",
         WIRE_MAGIC,
@@ -574,14 +621,24 @@ fn cmd_wire() -> Result<(), Fail> {
         sadhana_ok
     );
     println!(
-        "  • LoRa SACK & Int RTO   : srtt_x8={} ({}ms), rttvar_x4={} (4*{}ms), rto_min={}ms (2*ToA+G), hole={:?} -> backoff_rto={}ms (Karn's rule ✓)",
+        "  • LoRa SACK & Int RTO   : srtt_x8={} ({}ms), rttvar_x4={} (4*{}ms), rto_min={}ms (2*ToA+G), hole={:?} -> backoff_rto={}ms | CoCoA strong_srtt_x8={}, weak_srtt_x8={}, blended={}ms -> lfsr_dither={}ms ✓",
         sack.rto.srtt_x8,
         sack.rto.srtt_ms(),
         sack.rto.rttvar_x4,
         sack.rto.rttvar_ms(),
         sack.rto.rto_min_ms,
         expired_hole,
-        backed_off_rto
+        backed_off_rto,
+        cocoa.estimator.strong.srtt_x8,
+        cocoa.estimator.weak.srtt_x8,
+        cocoa_blended_rto,
+        cocoa_dithered_rto
+    );
+    println!(
+        "  • CoCoA VBF & Duty Gate : VBF_Fast3x(400ms)={}ms, EU868_1pct(500ms)={:?} -> t=50s {:?} (P1..P6 Gate-Before-Mutate ✓)",
+        vbf_3x,
+        deferred_outcome,
+        ready_outcome
     );
     Ok(())
 }
