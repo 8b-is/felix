@@ -1085,11 +1085,7 @@ pub const fn semtech_sx126x_toa_ms(
     let rhs = (4 * sf_clamped).saturating_add(20 * ih);
     let num = lhs.saturating_sub(rhs);
     let denom = 4 * (sf_clamped.saturating_sub(2 * de));
-    let ceil_blocks = if num == 0 {
-        0u32
-    } else {
-        num.div_ceil(denom)
-    };
+    let ceil_blocks = if num == 0 { 0u32 } else { num.div_ceil(denom) };
     let payload_symbols = 8u32.saturating_add(ceil_blocks.saturating_mul(cr + 4));
 
     // Total time in microseconds = (T_preamble + T_payload) = ((8 + 4.25) + payload_symbols) * T_sym_us

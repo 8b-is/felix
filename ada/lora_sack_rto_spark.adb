@@ -133,4 +133,59 @@ is
       end if;
    end Step_Vbf_Rto_Ms;
 
+   function Quiet_Time_Ms
+     (Band   : Duty_Cycle_Band;
+      Toa_Ms : Toa_Bound_Ms) return Unsigned_32
+   is
+      T : constant Unsigned_32 := Unsigned_32 (Toa_Ms);
+   begin
+      case Band is
+         when Band_10_Percent =>
+            -- 9 * T = (T << 3) + T (8 + 1 = 9)
+            return Shift_Left (T, 3) + T;
+         when Band_1_Percent =>
+            -- 99 * T = (T << 6) + (T << 5) + (T << 1) + T (64 + 32 + 2 + 1 = 99)
+            return Shift_Left (T, 6) + Shift_Left (T, 5) + Shift_Left (T, 1) + T;
+         when Band_0_1_Percent =>
+            -- 999 * T = (T << 10) - (T << 4) - (T << 3) - T (1024 - 16 - 8 - 1 = 999)
+            return Shift_Left (T, 10) - Shift_Left (T, 4) - Shift_Left (T, 3) - T;
+      end case;
+   end Quiet_Time_Ms;
+
+   function Credit_Cost
+     (Band   : Duty_Cycle_Band;
+      Toa_Ms : Toa_Bound_Ms) return Hour_Credits
+   is
+      T : constant Unsigned_32 := Unsigned_32 (Toa_Ms);
+   begin
+      case Band is
+         when Band_10_Percent =>
+            -- 10 * T = (T << 3) + (T << 1) (8 + 2 = 10)
+            return Hour_Credits (Shift_Left (T, 3) + Shift_Left (T, 1));
+         when Band_1_Percent =>
+            -- 100 * T = (T << 6) + (T << 5) + (T << 2) (64 + 32 + 4 = 100)
+            return Hour_Credits (Shift_Left (T, 6) + Shift_Left (T, 5) + Shift_Left (T, 2));
+         when Band_0_1_Percent =>
+            -- 1000 * T = (T << 10) - (T << 4) - (T << 3) (1024 - 16 - 8 = 1000)
+            return Hour_Credits (Shift_Left (T, 10) - Shift_Left (T, 4) - Shift_Left (T, 3));
+      end case;
+   end Credit_Cost;
+
+   function Duty_Cycle_Wait_Ms
+     (Band          : Duty_Cycle_Band;
+      Credits       : Hour_Credits;
+      Wait_Quiet_Ms : Unsigned_32;
+      Toa_Ms        : Toa_Bound_Ms) return Unsigned_32
+   is
+      Cost           : constant Hour_Credits := Credit_Cost (Band, Toa_Ms);
+      Wait_Credit_Ms : constant Unsigned_32  :=
+        (if Cost > Credits then Cost - Credits else 0);
+   begin
+      if Wait_Quiet_Ms > Wait_Credit_Ms then
+         return Wait_Quiet_Ms;
+      else
+         return Wait_Credit_Ms;
+      end if;
+   end Duty_Cycle_Wait_Ms;
+
 end Lora_Sack_Rto_Spark;

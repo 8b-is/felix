@@ -205,6 +205,39 @@ pub fn synthesize_dyadic_shift_add(r: Ratio, var: &str) -> String {
         return terms.join(" + ");
     }
 
+    // Booth / Balanced-Ternary signed shift-subtract decomposition (P2):
+    // If `p_u` is within a <= 3-bit deficit of `2^m` (e.g. 999 = 1024 - 16 - 8 - 1, 1000 = 1024 - 16 - 8),
+    // emit `(var << (m - k)) - ...` in <= 4 total terms!
+    if q_u.is_power_of_two() && p_u > 1 {
+        let k = q_u.trailing_zeros() as i32;
+        let ceil_pow2 = p_u.next_power_of_two();
+        let deficit = ceil_pow2 - p_u;
+        if deficit > 0 && deficit.count_ones() <= 3 {
+            let head_bit = ceil_pow2.trailing_zeros() as i32;
+            let head_shift = head_bit - k;
+            let mut expr = if head_shift == 0 {
+                var.to_string()
+            } else if head_shift > 0 {
+                format!("({var} << {head_shift})")
+            } else {
+                format!("({var} >> {})", -head_shift)
+            };
+            for bit in (0..64i32).rev() {
+                if (deficit & (1u64 << bit)) != 0 {
+                    let shift = bit - k;
+                    if shift == 0 {
+                        expr.push_str(&format!(" - {var}"));
+                    } else if shift > 0 {
+                        expr.push_str(&format!(" - ({var} << {shift})"));
+                    } else {
+                        expr.push_str(&format!(" - ({var} >> {})", -shift));
+                    }
+                }
+            }
+            return expr;
+        }
+    }
+
     // Fallback Q8 residual decomposition: var * (int_part + rem_q8/256)
     let int_part = p / q;
     let rem_q8 = ((p % q) * 256 + (q / 2)) / q;
@@ -1054,6 +1087,32 @@ mod tests {
         assert_eq!(
             synthesize_q8_multiply_shift(slow_q8, "rto"),
             "((rto * 333) >> 8)"
+        );
+
+        // Verify OMNI P2 EU868 Duty-Cycle shift-add/sub decompositions (9x, 10x, 99x, 100x, 999x, 1000x)
+        assert_eq!(
+            synthesize_dyadic_shift_add(Ratio::new(9, 1).unwrap(), "toa"),
+            "(toa << 3) + toa"
+        );
+        assert_eq!(
+            synthesize_dyadic_shift_add(Ratio::new(10, 1).unwrap(), "toa"),
+            "(toa << 3) + (toa << 1)"
+        );
+        assert_eq!(
+            synthesize_dyadic_shift_add(Ratio::new(99, 1).unwrap(), "toa"),
+            "(toa << 6) + (toa << 5) + (toa << 1) + toa"
+        );
+        assert_eq!(
+            synthesize_dyadic_shift_add(Ratio::new(100, 1).unwrap(), "toa"),
+            "(toa << 6) + (toa << 5) + (toa << 2)"
+        );
+        assert_eq!(
+            synthesize_dyadic_shift_add(Ratio::new(999, 1).unwrap(), "toa"),
+            "(toa << 10) - (toa << 4) - (toa << 3) - toa"
+        );
+        assert_eq!(
+            synthesize_dyadic_shift_add(Ratio::new(1000, 1).unwrap(), "toa"),
+            "(toa << 10) - (toa << 4) - (toa << 3)"
         );
     }
 

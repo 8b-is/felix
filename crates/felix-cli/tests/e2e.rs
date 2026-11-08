@@ -249,6 +249,8 @@ fn wire_c1_frame_and_ultra_subcommands_verify_end_to_end() {
     assert!(
         wire_txt.contains("Borealiscodes +++     : #3 IE (14562 contribs) | mode=CommandMergeMode")
     );
+    assert!(wire_txt.contains("MEM|8 Symplectic Probe: ORCID 0009-0004-7968-5707 (dim=80, 640B) | int_drift=0, ΔΩ=0 vs f64_drift="));
+    assert!(wire_txt.contains("ΣΔ_err=0 vs naive=25600, non_vacuous_iso=true, enc_guard=true ✓"));
     assert!(wire_txt
         .contains("StringTemplate5 p/q   : HYDRA[Rust/Ada/Prolog/SV] | 3x=`rto + (rto << 1)`"));
     assert!(wire_txt.contains("1.3x_3tap=`rto + (rto >> 2) + (rto >> 5) + (rto >> 6)`"));

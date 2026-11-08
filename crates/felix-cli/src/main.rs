@@ -688,6 +688,20 @@ fn cmd_wire() -> Result<(), Fail> {
         toa_sf7,
         toa_sf12
     );
+    let symp = felix_lang::ndh_symplectic_probe::run_reproducible_symplectic_comparison();
+    println!(
+        "  • MEM|8 Symplectic Probe: ORCID {} (dim={}, {}B) | int_drift={}, ΔΩ={} vs f64_drift={:.3e} | ΣΔ_err={} vs naive={}, non_vacuous_iso={}, enc_guard={} ✓",
+        felix_lang::ndh_symplectic_probe::BOREALIS_ORCID,
+        felix_lang::ndh_symplectic_probe::DIM_80,
+        symp.state_stack_bytes,
+        symp.exact_int_roundtrip_l1_drift,
+        symp.exact_symplectic_2form_drift,
+        symp.f64_roundtrip_l1_drift,
+        symp.sigma_delta_dc_error,
+        symp.naive_quantizer_dc_error,
+        symp.non_vacuous_isolation_verified,
+        symp.encoder_injectivity_guard_verified
+    );
     cmd_st5()?;
     Ok(())
 }

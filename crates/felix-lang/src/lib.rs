@@ -59,6 +59,7 @@ pub mod lora_sack_rto;
 pub mod m8_axum_webhook_server;
 pub mod m8_genesis_container;
 pub mod mind_all_neuro_omega;
+pub mod ndh_symplectic_probe;
 
 pub mod lexer;
 pub mod omni_escanor_zeno_scheduler;

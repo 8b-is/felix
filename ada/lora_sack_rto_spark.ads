@@ -22,6 +22,14 @@ is
    -- CoCoA Variable Backoff Factor (VBF) Regimes (1000 ms / 3000 ms canonical thresholds)
    type Vbf_Regime is (Fast_3x, Medium_2x, Slow_1_3x);
 
+   -- ETSI EN 300 220-2 / LoRaWAN EU868 Sub-Band Duty-Cycle Classes (10%, 1%, 0.1%)
+   type Duty_Cycle_Band is (Band_10_Percent, Band_1_Percent, Band_0_1_Percent);
+
+   -- P1 Prescaled Unit Swap: 1 hour in ms (3_600_000 credits, 1 credit == 1 ms)
+   Hour_Credits_Max     : constant Unsigned_32 := 3_600_000;
+   subtype Hour_Credits is Unsigned_32 range 0 .. Hour_Credits_Max;
+   subtype Toa_Bound_Ms is Unsigned_32 range 1 .. 3_600;
+
    Clock_Granularity_Ms : constant Rtt_Ms := 10;
    Max_Weak_Retries     : constant Retry_Count := 2;
 
@@ -112,5 +120,37 @@ is
           Pre  => Rto_Min_Ms <= Rto_Max_Ms,
           Post => Step_Vbf_Rto_Ms'Result >= Rto_Min_Ms
                   and then Step_Vbf_Rto_Ms'Result <= Rto_Max_Ms;
+
+   -- 10. P2 Shift-Add Decomposition: Per-Packet Quiet Lockout T_off = (1/d - 1) * ToA (9x, 99x, 999x)
+   function Quiet_Time_Ms
+     (Band   : Duty_Cycle_Band;
+      Toa_Ms : Toa_Bound_Ms) return Unsigned_32
+     with Inline,
+          Pre  => Toa_Ms >= 1 and then Toa_Ms <= 3_600,
+          Post => (case Band is
+                     when Band_10_Percent  => Quiet_Time_Ms'Result = 9 * Toa_Ms,
+                     when Band_1_Percent   => Quiet_Time_Ms'Result = 99 * Toa_Ms,
+                     when Band_0_1_Percent => Quiet_Time_Ms'Result = 999 * Toa_Ms);
+
+   -- 11. P2 Shift-Add Decomposition: Rolling-Hour Bucket Debit Cost = (1/d) * ToA (10x, 100x, 1000x)
+   function Credit_Cost
+     (Band   : Duty_Cycle_Band;
+      Toa_Ms : Toa_Bound_Ms) return Hour_Credits
+     with Inline,
+          Pre  => Toa_Ms >= 1 and then Toa_Ms <= 3_600,
+          Post => (case Band is
+                     when Band_10_Percent  => Credit_Cost'Result = 10 * Toa_Ms,
+                     when Band_1_Percent   => Credit_Cost'Result = 100 * Toa_Ms,
+                     when Band_0_1_Percent => Credit_Cost'Result = 1_000 * Toa_Ms);
+
+   -- 12. P4 & P6 Read-Only Duty-Cycle Deferral Calculator: exact residual wait_ms (0 == Ready)
+   function Duty_Cycle_Wait_Ms
+     (Band          : Duty_Cycle_Band;
+      Credits       : Hour_Credits;
+      Wait_Quiet_Ms : Unsigned_32;
+      Toa_Ms        : Toa_Bound_Ms) return Unsigned_32
+     with Inline,
+          Pre  => Toa_Ms >= 1 and then Toa_Ms <= 3_600,
+          Post => Duty_Cycle_Wait_Ms'Result >= Wait_Quiet_Ms;
 
 end Lora_Sack_Rto_Spark;
