@@ -89,4 +89,10 @@ is
           Pre  => True,
           Post => Verify_Integral_Lll_Lovasz_3_4'Result = True;
 
+   -- 8. Techno-Zen-Bonobo Era: Rung-0 Bonobo (3/2) x LLL Lovasz (3/4) = 9/8 Pythagorean Whole-Tone & 432Hz/180WPM Lock
+   function Verify_Techno_Zen_Bonobo_Era_9_8 return Boolean
+     with Inline,
+          Pre  => True,
+          Post => Verify_Techno_Zen_Bonobo_Era_9_8'Result = True;
+
 end Qwen4_Exp_Train_8bis_Spark;
