@@ -73,13 +73,15 @@ is
       Inner_Voice       : Inner_Voice_Register;
       Inner_F0_Hz       : Voice_F0_Hz_Range) return Phoenix_Dyad_State
    is
+      subtype Personality_Q8_Range is Integer_32 range 179 .. 358;
+      subtype Emotion_Mult_Q8_Range is Integer_32 range 256 .. 800;
       Abs_Warmth      : constant Integer_32 := abs (Warmth_Q8);
       Val_Contrast_Q8 : constant Integer_32 := abs (User_Valence_Q8 - Memory_Valence_Q8);
       Dyadic_Aro_Q8   : constant Arousal_Q8_Range :=
         Compute_Dyadic_Arousal_Q8 (User_Arousal_Q8, Memory_Arousal_Q8);
-      Personality_Q8  : constant Integer_32 :=
+      Personality_Q8  : constant Personality_Q8_Range :=
         179 + (115 * Expr_Q8) / 256 + (64 * Abs_Warmth) / 256;
-      Emotion_Mult_Q8 : constant Integer_32 :=
+      Emotion_Mult_Q8 : constant Emotion_Mult_Q8_Range :=
         256 + (166 * Dyadic_Aro_Q8) / 256
             + (115 * Reunion_Depth_Q8) / 256
             + (77 * Val_Contrast_Q8) / 256;
