@@ -79,6 +79,7 @@ pub mod signed_ternary_graph;
 pub mod spacetime_silk_wormhole_router;
 pub mod stringtemplate5_pq;
 pub mod typeck;
+pub mod von_chenoweth_lodri_finance;
 pub mod well_signal_resolution;
 pub mod well_signal_spqt_espnow;
 pub mod wire_c1_frame;
