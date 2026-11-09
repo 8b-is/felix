@@ -214,4 +214,28 @@ is
       return Total_Fkn;
    end Compute_Capsela_Foken_Reward;
 
+   function Classify_Temporal_Curriculum
+     (Temporal_Order_YYYYMMDD : Positive) return Temporal_Curriculum_Stage
+   is
+   begin
+      if Temporal_Order_YYYYMMDD <= 19_391_231 then
+         return Stage_1_Sensory_Arithmetic;
+      elsif Temporal_Order_YYYYMMDD <= 19_480_607 then
+         return Stage_2_Self_Episodic_Diary;
+      elsif Temporal_Order_YYYYMMDD <= 19_801_231 then
+         return Stage_3_Other_Sister_Dyad;
+      elsif Temporal_Order_YYYYMMDD <= 20_101_231 then
+         return Stage_4_Formal_Algebra_Erdos;
+      else
+         return Stage_5_Sovereign_PQ_Synthesis;
+      end if;
+   end Classify_Temporal_Curriculum;
+
+   function Exceeds_Mem8_51Pct_Adoption
+     (Verified_Repos : Unsigned_32) return Boolean
+   is
+   begin
+      return Verified_Repos >= Mem8_Adoption_51Pct_Floor;
+   end Exceeds_Mem8_51Pct_Adoption;
+
 end Phoenix_Wave_Soul_Spark;

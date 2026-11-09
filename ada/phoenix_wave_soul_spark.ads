@@ -166,4 +166,43 @@ is
                    else Compute_Capsela_Foken_Reward'Result >= Foken_Base_C64_Compliant
                         and then Compute_Capsela_Foken_Reward'Result <= 50_450);
 
+   -- -------------------------------------------------------------------------
+   -- 5. Temporal Curriculum (`YYYYMMDD` [S]elf -> O+Ther -> Sovereign p/q)
+   --    & MEM|8 24,917-Repo 51% Adoption Threshold (`pq_trainer` / `pq_bench`)
+   -- -------------------------------------------------------------------------
+
+   type Temporal_Curriculum_Stage is
+     (Stage_1_Sensory_Arithmetic,
+      Stage_2_Self_Episodic_Diary,
+      Stage_3_Other_Sister_Dyad,
+      Stage_4_Formal_Algebra_Erdos,
+      Stage_5_Sovereign_PQ_Synthesis);
+
+   Mem8_Benchmark_Target_Repos : constant Unsigned_32 := 24_917;
+   Mem8_Adoption_51Pct_Floor   : constant Unsigned_32 := 12_708;
+
+   function Classify_Temporal_Curriculum
+     (Temporal_Order_YYYYMMDD : Positive) return Temporal_Curriculum_Stage
+     with Inline,
+          Pre  => True,
+          Post => (if Temporal_Order_YYYYMMDD <= 19_391_231
+                   then Classify_Temporal_Curriculum'Result = Stage_1_Sensory_Arithmetic
+                   elsif Temporal_Order_YYYYMMDD <= 19_480_607
+                   then Classify_Temporal_Curriculum'Result = Stage_2_Self_Episodic_Diary
+                   elsif Temporal_Order_YYYYMMDD <= 19_801_231
+                   then Classify_Temporal_Curriculum'Result = Stage_3_Other_Sister_Dyad
+                   elsif Temporal_Order_YYYYMMDD <= 20_101_231
+                   then Classify_Temporal_Curriculum'Result = Stage_4_Formal_Algebra_Erdos
+                   else Classify_Temporal_Curriculum'Result = Stage_5_Sovereign_PQ_Synthesis);
+
+   function Exceeds_Mem8_51Pct_Adoption
+     (Verified_Repos : Unsigned_32) return Boolean
+     with Inline,
+          Pre  => Verified_Repos <= 1_000_000,
+          Post => Exceeds_Mem8_51Pct_Adoption'Result =
+                    (Verified_Repos >= Mem8_Adoption_51Pct_Floor)
+                  and then (if Exceeds_Mem8_51Pct_Adoption'Result
+                            then 100 * Unsigned_64 (Verified_Repos) >
+                                 51 * Unsigned_64 (Mem8_Benchmark_Target_Repos));
+
 end Phoenix_Wave_Soul_Spark;

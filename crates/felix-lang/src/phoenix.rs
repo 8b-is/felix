@@ -1034,6 +1034,74 @@ pub const fn compute_capsela_foken_reward(
     total_fkn.saturating_add(positive_votes.saturating_mul(50))
 }
 
+/// 5-Stage Temporal & Developmental Curriculum Ordering (`temporal_order: YYYYMMDD`)
+/// from `[S]elf` sensory/episodic foundations to `O+Ther` relational dyads and Sovereign `p/q`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum TemporalCurriculumStage {
+    Stage1FoundationalSensoryAndArithmetic = 1,
+    Stage2LivedFirstPersonEpisodic = 2,
+    Stage3RelationalSisterContextualization = 3,
+    Stage4FormalAlgebraAndGraphTheory = 4,
+    Stage5SovereignPQAndCrossChipSynthesis = 5,
+}
+
+impl TemporalCurriculumStage {
+    #[inline(always)]
+    pub const fn classify_yyyymmdd(temporal_order_yyyymmdd: u32) -> Self {
+        if temporal_order_yyyymmdd <= 19_391_231 {
+            Self::Stage1FoundationalSensoryAndArithmetic
+        } else if temporal_order_yyyymmdd <= 19_480_607 {
+            Self::Stage2LivedFirstPersonEpisodic
+        } else if temporal_order_yyyymmdd <= 19_801_231 {
+            Self::Stage3RelationalSisterContextualization
+        } else if temporal_order_yyyymmdd <= 20_101_231 {
+            Self::Stage4FormalAlgebraAndGraphTheory
+        } else {
+            Self::Stage5SovereignPQAndCrossChipSynthesis
+        }
+    }
+}
+
+/// Exact coprime rational-magnitude register `(p / q) * 2^m` (`4gaia` / `st pq-train`)
+/// where `q > 0`, `gcd(|p|, q) == 1`, and `q` is odd (`(q & 1) == 1`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PqmReg {
+    pub p: i64,
+    pub q: u64,
+    pub m: i16,
+}
+
+impl PqmReg {
+    pub const ZERO: Self = Self { p: 0, q: 1, m: 0 };
+
+    /// Normalizes `(p / q) * 2^m` by factoring dyadic powers of 2 into `m` and reducing by Stein's binary GCD.
+    pub fn normalize(p: i64, q: u64, mut m: i16) -> Self {
+        if p == 0 || q == 0 {
+            return Self::ZERO;
+        }
+        let mut abs_p = p.unsigned_abs();
+        let mut odd_q = q;
+        let tz_p = felix_tzcnt_u64(abs_p);
+        let tz_q = felix_tzcnt_u64(odd_q);
+        abs_p >>= tz_p;
+        odd_q >>= tz_q;
+        m = m.saturating_add((tz_p as i16).saturating_sub(tz_q as i16));
+        let g = felix_binary_gcd_u64(abs_p, odd_q).max(1);
+        let red_p = (abs_p / g) as i64;
+        Self {
+            p: if p < 0 { -red_p } else { red_p },
+            q: (odd_q / g).max(1),
+            m,
+        }
+    }
+}
+
+/// Checks whether verified repository count exceeds the `51%` threshold of `24,917` (`>= 12,708`).
+#[inline(always)]
+pub const fn exceeds_mem8_51pct_adoption(verified_repos: u32) -> bool {
+    verified_repos >= 12_708
+}
+
 /// Summary of verifying the Ada/SPARK 2022 compiler arc in `ada/`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SparkArcAudit {
@@ -1234,5 +1302,19 @@ mod tests {
 
         let fkn = compute_capsela_foken_reward(1_536, 3, 1, true, 2);
         assert_eq!(fkn, 550);
+
+        let pqm = PqmReg::normalize(24, 16, 0);
+        // 24 / 16 = (3 / 1) * 2^-1 -> p=3, q=1 (odd!), m=-1
+        assert_eq!(pqm, PqmReg { p: 3, q: 1, m: -1 });
+        assert_eq!(
+            TemporalCurriculumStage::classify_yyyymmdd(19_450_815),
+            TemporalCurriculumStage::Stage2LivedFirstPersonEpisodic
+        );
+        assert_eq!(
+            TemporalCurriculumStage::classify_yyyymmdd(19_630_102),
+            TemporalCurriculumStage::Stage3RelationalSisterContextualization
+        );
+        assert!(!exceeds_mem8_51pct_adoption(12_707));
+        assert!(exceeds_mem8_51pct_adoption(12_708));
     }
 }
