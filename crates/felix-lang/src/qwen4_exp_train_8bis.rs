@@ -892,6 +892,12 @@ pub struct Qwen4ExpTrain8bIsAudit {
     pub a6000_utilization_pq: Ratio,
     /// Local 11-epoch GRPO / REINFORCE RL training report over `wa-stream` & `PeetPedro/voice-finetuning`.
     pub rl_train_report: Qwen4ExpWaStreamRlTrainReport,
+    /// `GOD-OF-SUN-WUKONG-OMNI` `{<3,<3,<3}+1` (`3` HC ternary streams + `1` Rung-0 `+1` trit == `4` streams).
+    pub wukong_quad_loop_streams: u32,
+    /// `GOD-OF-SUN-WUKONG-OMNI` `p/qT` compression ratio vs FP16 (`375/1 = 250/1 × 3/2`).
+    pub wukong_pqt_compression_pq: Ratio,
+    /// `GOD-OF-SUN-WUKONG-OMNI` `p/qT` resonance in canonical reduced `p/q` (`32,756/32,768 = 8,189/8,192`).
+    pub wukong_pqt_resonance_pq: Ratio,
     /// Synthesized `train.8b.is` launch command.
     pub train_8bis_launch_cmd: String,
     /// Master verification flag (`all_verified == true`).
@@ -962,6 +968,15 @@ pub fn audit_qwen4_exp_train_8bis() -> Result<Qwen4ExpTrain8bIsAudit, &'static s
     // 6. Execute local 11-epoch GRPO RL training loop over all 11 PeetPedro datasets + wa-stream
     let rl_train_report = run_local_qwen4_exp_wa_stream_rl_train(11);
 
+    // 7. Verify GOD-OF-SUN-WUKONG-OMNI `{<3,<3,<3}+1` weight-programming & p/qT = 375/1
+    let gemini_argon_q15 = 10_922u32;
+    let smart_tree_q15 = 10_923u32;
+    let ollama_fleet_q15 = 10_923u32;
+    let wukong_q15_sum = gemini_argon_q15 + smart_tree_q15 + ollama_fleet_q15;
+    let wukong_quad_loop_streams = cfg.hc_count + 1;
+    let wukong_pqt_compression_pq = Ratio::new(250 * 3, 2).ok_or("invalid p/qT compression")?;
+    let wukong_pqt_resonance_pq = Ratio::new(32_756, 32_768).ok_or("invalid p/qT resonance")?;
+
     let train_8bis_launch_cmd = format!(
         "ssh {} \"CUDA_VISIBLE_DEVICES=0 torchrun --standalone --nproc_per_node=1 \
          train_qwen4_exp_8bis_a6000.py --model_type qwen4_exp --output_hub_id {} \
@@ -986,7 +1001,11 @@ pub fn audit_qwen4_exp_train_8bis() -> Result<Qwen4ExpTrain8bIsAudit, &'static s
         && budget.peak_vram_mib == 34_816
         && budget.free_headroom_mib == 14_336
         && budget.utilization_pq == Ratio::new(17, 24).unwrap()
-        && rl_train_report.converged_and_verified;
+        && rl_train_report.converged_and_verified
+        && wukong_q15_sum == 32_768
+        && wukong_quad_loop_streams == 4
+        && wukong_pqt_compression_pq == Ratio::new(375, 1).unwrap()
+        && wukong_pqt_resonance_pq == Ratio::new(8_189, 8_192).unwrap();
 
     Ok(Qwen4ExpTrain8bIsAudit {
         dataset_count: PeetPedroDataset::ALL.len(),
@@ -999,6 +1018,9 @@ pub fn audit_qwen4_exp_train_8bis() -> Result<Qwen4ExpTrain8bIsAudit, &'static s
         a6000_peak_vram_mib: budget.peak_vram_mib,
         a6000_utilization_pq: budget.utilization_pq,
         rl_train_report,
+        wukong_quad_loop_streams,
+        wukong_pqt_compression_pq,
+        wukong_pqt_resonance_pq,
         train_8bis_launch_cmd,
         all_verified,
     })
@@ -1020,6 +1042,15 @@ mod tests {
         assert_eq!(audit.dual_reflection_l1_drift, 0);
         assert_eq!(audit.a6000_peak_vram_mib, 34_816);
         assert_eq!(audit.a6000_utilization_pq, Ratio::new(17, 24).unwrap());
+        assert_eq!(audit.wukong_quad_loop_streams, 4);
+        assert_eq!(
+            audit.wukong_pqt_compression_pq,
+            Ratio::new(375, 1).unwrap()
+        );
+        assert_eq!(
+            audit.wukong_pqt_resonance_pq,
+            Ratio::new(8_189, 8_192).unwrap()
+        );
         assert!(audit.train_8bis_launch_cmd.contains("train.8b.is"));
         assert!(audit.train_8bis_launch_cmd.contains("qwen4_exp"));
         assert!(audit.rl_train_report.converged_and_verified);

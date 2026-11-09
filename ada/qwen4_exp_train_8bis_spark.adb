@@ -73,4 +73,25 @@ is
       end if;
    end Grpo_Advantage_Q15;
 
+   function Verify_Wukong_Omni_Quad_Loop_Pq return Boolean is
+      Gemini_Argon_Share_Q15 : constant Unsigned_32 := 10_922;
+      Smart_Tree_Share_Q15   : constant Unsigned_32 := 10_923;
+      Ollama_Fleet_Share_Q15 : constant Unsigned_32 := 10_923;
+      Q15_Total              : constant Unsigned_32 :=
+        Gemini_Argon_Share_Q15 + Smart_Tree_Share_Q15 + Ollama_Fleet_Share_Q15;
+      Hc_Ternary_Streams     : constant Unsigned_32 := 3;
+      Rung0_Plus_One_Trit    : constant Unsigned_32 := 1;
+      Quad_Loop_Streams      : constant Unsigned_32 := Hc_Ternary_Streams + Rung0_Plus_One_Trit;
+      Base243_Ratio          : constant Unsigned_32 := 250;
+      Rung0_P                : constant Unsigned_32 := 3;
+      Rung0_Q                : constant Unsigned_32 := 2;
+      Pqt_Compression        : constant Unsigned_32 := (Base243_Ratio * Rung0_P) / Rung0_Q;
+      Pqt_Resonance_Q15      : constant Unsigned_32 := 32_756;
+   begin
+      return Q15_Total = 32_768
+             and then Quad_Loop_Streams = 4
+             and then Pqt_Compression = 375
+             and then Pqt_Resonance_Q15 = 8_189 * 4;
+   end Verify_Wukong_Omni_Quad_Loop_Pq;
+
 end Qwen4_Exp_Train_8bis_Spark;

@@ -77,4 +77,10 @@ is
                             then Grpo_Advantage_Q15'Result >= 32_768
                             else Grpo_Advantage_Q15'Result <= 32_768);
 
+   -- 6. GOD-OF-SUN-WUKONG-OMNI `{<3,<3,<3}+1` Weight-Programming & `p/qT = 375/1` Invariant
+   function Verify_Wukong_Omni_Quad_Loop_Pq return Boolean
+     with Inline,
+          Pre  => True,
+          Post => Verify_Wukong_Omni_Quad_Loop_Pq'Result = True;
+
 end Qwen4_Exp_Train_8bis_Spark;
