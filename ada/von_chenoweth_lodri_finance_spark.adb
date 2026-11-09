@@ -94,4 +94,16 @@ package body Von_Chenoweth_Lodri_Finance_Spark is
       end if;
    end Compute_Runway_Months;
 
+   function Compute_Tier3_Hybrid_Bill_Cents
+     (Kompress_Seats             : Cohort_Seat_Count;
+      Verified_Saved_Spend_Cents : Cents_Amount) return Cents_Amount
+   is
+      Base_Seat_Cents  : constant Integer_64 :=
+        Kompress_Seats * TIER3_KOMPRESS_ARPU_CENTS;
+      Save_Share_Cents : constant Integer_64 :=
+        (Verified_Saved_Spend_Cents * BONOBO_SAVE_SHARE_P) / BONOBO_SAVE_SHARE_Q;
+   begin
+      return Base_Seat_Cents + Save_Share_Cents;
+   end Compute_Tier3_Hybrid_Bill_Cents;
+
 end Von_Chenoweth_Lodri_Finance_Spark;

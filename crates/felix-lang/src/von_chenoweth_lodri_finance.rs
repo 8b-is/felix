@@ -39,8 +39,24 @@ pub const RETENTION_M12_PQ: (u64, u64) = (3, 4);
 pub const BONOBO_NDR_PQ: (u64, u64) = (3, 2);
 /// Marketplace Take Rate `p/q = 3/20` (`15.0%`).
 pub const MARKETPLACE_TAKE_RATE_PQ: (u64, u64) = (3, 20);
+/// Tier 3 Hybrid Save-Share Meter `p/q = 1/5` (`20.0%` of verified upstream token spend saved).
+pub const BONOBO_SAVE_SHARE_PQ: (u64, u64) = (1, 5);
 /// Fully-loaded compensation multiplier `p/q = 27/20` (`1.35x` base salary).
 pub const FULLY_LOADED_PAYROLL_PQ: (u64, u64) = (27, 20);
+
+/// Computes Tier 3 (`Bonobo + Kompress-Super-Ultra`) hybrid monthly bill in cents:
+/// `seats * 2_900 ($29/mo) + verified_saved_spend_cents * (1 / 5)`.
+#[inline]
+pub const fn compute_tier3_hybrid_kompress_bill_cents(
+    kompress_seats: u64,
+    verified_saved_spend_cents: u64,
+) -> u64 {
+    let base_cents = kompress_seats.saturating_mul(TIER3_KOMPRESS_ARPU_CENTS);
+    let save_share_cents = verified_saved_spend_cents
+        .saturating_mul(BONOBO_SAVE_SHARE_PQ.0)
+        / BONOBO_SAVE_SHARE_PQ.1;
+    base_cents.saturating_add(save_share_cents)
+}
 
 /// Division-free Stein binary GCD on `u64`.
 #[inline]
@@ -397,6 +413,8 @@ mod tests {
         assert_eq!(ue.bonobo_ndr_pq, (3, 2));
         assert_eq!(ue.seed_dilution_pq, (1, 5));
         assert_eq!(cohort_retention_pq(12), (3, 4));
+        // 10 seats ($290 = 29_000c) + 1/5 of $1,000 saved (20_000c) = $490 (49_000c)
+        assert_eq!(compute_tier3_hybrid_kompress_bill_cents(10, 100_000), 49_000);
     }
 
     #[test]

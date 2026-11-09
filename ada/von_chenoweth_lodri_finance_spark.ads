@@ -50,6 +50,10 @@ package Von_Chenoweth_Lodri_Finance_Spark is
    MARKETPLACE_TAKE_P : constant Integer_64 := 3;
    MARKETPLACE_TAKE_Q : constant Integer_64 := 20;
 
+   --  Tier 3 Hybrid Save-Share Meter = 20% = 1/5 of verified upstream token spend saved
+   BONOBO_SAVE_SHARE_P : constant Integer_64 := 1;
+   BONOBO_SAVE_SHARE_Q : constant Integer_64 := 5;
+
    subtype Cohort_Seat_Count is Integer_64 range 0 .. 1_000_000;
    subtype Cents_Amount is Integer_64 range 0 .. 100_000_000_000_000;
    subtype Scenario_Kind is Unsigned_32 range 0 .. 2;
@@ -142,5 +146,17 @@ package Von_Chenoweth_Lodri_Finance_Spark is
                   Compute_Runway_Months'Result = 1_200
                 else
                   Compute_Runway_Months'Result <= 1_200);
+
+   --  7. Computes Tier 3 Hybrid Bill ($29/mo per seat + 1/5 save-share on verified saved spend).
+   function Compute_Tier3_Hybrid_Bill_Cents
+     (Kompress_Seats             : Cohort_Seat_Count;
+      Verified_Saved_Spend_Cents : Cents_Amount) return Cents_Amount
+     with
+       Pre  => Verified_Saved_Spend_Cents <= 50_000_000_000_000,
+       Post => Compute_Tier3_Hybrid_Bill_Cents'Result =
+                 Kompress_Seats * TIER3_KOMPRESS_ARPU_CENTS +
+                 (Verified_Saved_Spend_Cents * BONOBO_SAVE_SHARE_P) / BONOBO_SAVE_SHARE_Q
+         and then Compute_Tier3_Hybrid_Bill_Cents'Result >=
+                 Kompress_Seats * TIER3_KOMPRESS_ARPU_CENTS;
 
 end Von_Chenoweth_Lodri_Finance_Spark;
