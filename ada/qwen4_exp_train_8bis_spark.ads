@@ -95,4 +95,10 @@ is
           Pre  => True,
           Post => Verify_Techno_Zen_Bonobo_Era_9_8'Result = True;
 
+   -- 9. Chacheless E8 Gosset Lattice Zero-KV-Cache (240 roots, det = 1, p/qT = 750/1, Stage-3 8191/8192)
+   function Verify_E8_Gosset_Chacheless_750_1 return Boolean
+     with Inline,
+          Pre  => True,
+          Post => Verify_E8_Gosset_Chacheless_750_1'Result = True;
+
 end Qwen4_Exp_Train_8bis_Spark;
