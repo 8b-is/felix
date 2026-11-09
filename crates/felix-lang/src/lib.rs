@@ -40,6 +40,7 @@
 pub mod agp_cap_iommu_tlb;
 pub mod agp_dma_ring_sim;
 pub mod agp_isa_packetizer;
+pub mod arm_cortex_m7_driver;
 pub mod ast;
 pub mod capsule;
 pub mod cavecrew_kompress_waiyan;
