@@ -593,7 +593,7 @@ pub fn build_canonical_mem8_recall_module(version: u32) -> Result<FelixPhoenixMo
 }
 
 /// The 30 canonical Ada/SPARK 2022 packages comprising the `FELIX | PHOENIX` compiler arc (`M0..M7` + `felix_codegen_spark` + `embedded_quant_peter` + `felix_fpga_axis_spark` + `galaxia_crdt_spark` + `ljodatal_18_spark` + `agp_iommu_tlb_spark` + `mind_all_neuro_spark` + `well_signal_spqt_spark` + `phoenix_cap_abi_spark` + `m8_commerce_webhook_spark` + `erdos_pqt_spark` + `signed_ternary_graph_spark` + `q6_hamming_spark` + `quant_ultra_graphs_spark` + `lora_sack_rto_spark` + `stringtemplate5_pq_spark` + `ndh_symplectic_probe_spark` + `cavecrew_kompress_spark` + `qwen4_exp_train_8bis_spark` + `phoenix_wave_soul_spark` + `phoenix_linker` + `phoenix_vm` + `felix_bench`).
-pub const SPARK_ARC_PACKAGES: [&str; 31] = [
+pub const SPARK_ARC_PACKAGES: [&str; 32] = [
     "felix_nand_tcb",
     "felix_front",
     "felix_type",
@@ -621,6 +621,7 @@ pub const SPARK_ARC_PACKAGES: [&str; 31] = [
     "cavecrew_kompress_spark",
     "qwen4_exp_train_8bis_spark",
     "peloton_row_ayeos_spark",
+    "mem8_vector_db_spark",
     "phoenix_wave_soul_spark",
     "phoenix_linker",
     "phoenix_vm",
@@ -1253,11 +1254,11 @@ mod tests {
             .and_then(|p| p.parent())
             .expect("workspace root")
             .join("ada");
-        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 31 Ada/SPARK packages");
-        assert_eq!(audit.packages_verified, 31);
-        assert_eq!(audit.total_files, 62);
-        assert_eq!(audit.spark_mode_on_count, 62);
-        assert_eq!(audit.no_heap_restrictions_count, 62);
+        let audit = verify_ada_spark_arc(&ada_dir).expect("verify 32 Ada/SPARK packages");
+        assert_eq!(audit.packages_verified, 32);
+        assert_eq!(audit.total_files, 64);
+        assert_eq!(audit.spark_mode_on_count, 64);
+        assert_eq!(audit.no_heap_restrictions_count, 64);
     }
 
     #[test]
