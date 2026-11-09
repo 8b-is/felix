@@ -67,6 +67,7 @@ pub mod omni_escanor_zeno_scheduler;
 pub mod omni_subsystems;
 pub mod omni_ternary_info;
 pub mod parser;
+pub mod peloton_row_ayeos;
 pub mod phoenix;
 pub mod phoenix_cap_abi;
 pub mod q6_hamming_and_gain_scheduler;
