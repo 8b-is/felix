@@ -869,6 +869,125 @@ pub fn run_local_qwen4_exp_wa_stream_rl_train(epochs: usize) -> Qwen4ExpWaStream
     }
 }
 
+/// Exact Integral Lenstra–Lenstra–Lovász (`LLL`) rank-2 lattice basis reduction certificate
+/// in $\mathbb{Z}^{16}$ with Lovász parameter $\delta = 3/4$ (dual to Rung-0 $p/q = 3/2$).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IntegralLllReductionResult {
+    pub b1_reduced: [i64; 16],
+    pub b2_reduced: [i64; 16],
+    pub norm1_sq_before: i64,
+    pub norm2_sq_before: i64,
+    pub dot12_before: i64,
+    pub norm1_sq_after: i64,
+    pub norm2_sq_after: i64,
+    pub dot12_after: i64,
+    pub gram_det_before: i64,
+    pub gram_det_after: i64,
+    pub steps_taken: u32,
+    pub size_reduced: bool,
+    pub lovasz_3_4_satisfied: bool,
+    pub unimodular_det_preserved: bool,
+}
+
+/// Performs exact integer rank-2 Lenstra–Lenstra–Lovász (`LLL`) lattice basis reduction
+/// in $\mathbb{Z}^{16}$ using only exact integer arithmetic (`#![no_std]`, zero `f64`).
+pub const fn integral_lll_reduce_rank2_dim16(
+    mut b1: [i64; 16],
+    mut b2: [i64; 16],
+) -> IntegralLllReductionResult {
+    let mut n1_before = 0i64;
+    let mut n2_before = 0i64;
+    let mut d12_before = 0i64;
+    let mut i = 0usize;
+    while i < 16 {
+        n1_before += b1[i] * b1[i];
+        n2_before += b2[i] * b2[i];
+        d12_before += b1[i] * b2[i];
+        i += 1;
+    }
+    let gram_det_before = n1_before * n2_before - d12_before * d12_before;
+
+    let mut steps = 0u32;
+    while steps < 32 {
+        let mut n1 = 0i64;
+        let mut d12 = 0i64;
+        let mut k = 0usize;
+        while k < 16 {
+            n1 += b1[k] * b1[k];
+            d12 += b1[k] * b2[k];
+            k += 1;
+        }
+        if n1 == 0 {
+            break;
+        }
+        let mu = if d12 >= 0 {
+            (2 * d12 + n1) / (2 * n1)
+        } else {
+            -((2 * (-d12) + n1) / (2 * n1))
+        };
+        if mu != 0 {
+            let mut j = 0usize;
+            while j < 16 {
+                b2[j] -= mu * b1[j];
+                j += 1;
+            }
+        }
+        let mut n2_new = 0i64;
+        let mut d12_new = 0i64;
+        let mut m = 0usize;
+        while m < 16 {
+            n2_new += b2[m] * b2[m];
+            d12_new += b1[m] * b2[m];
+            m += 1;
+        }
+        steps += 1;
+        if 4 * n1 * n2_new >= 3 * n1 * n1 + 4 * d12_new * d12_new {
+            break;
+        }
+        let tmp = b1;
+        b1 = b2;
+        b2 = tmp;
+    }
+
+    let mut n1_after = 0i64;
+    let mut n2_after = 0i64;
+    let mut d12_after = 0i64;
+    let mut p = 0usize;
+    while p < 16 {
+        n1_after += b1[p] * b1[p];
+        n2_after += b2[p] * b2[p];
+        d12_after += b1[p] * b2[p];
+        p += 1;
+    }
+    let gram_det_after = n1_after * n2_after - d12_after * d12_after;
+    let abs_2d12 = if d12_after >= 0 {
+        2 * d12_after
+    } else {
+        -2 * d12_after
+    };
+    let size_reduced = abs_2d12 <= n1_after;
+    let lovasz_3_4_satisfied =
+        4 * n1_after * n2_after >= 3 * n1_after * n1_after + 4 * d12_after * d12_after;
+    let unimodular_det_preserved = gram_det_before == gram_det_after && gram_det_after > 0;
+
+    IntegralLllReductionResult {
+        b1_reduced: b1,
+        b2_reduced: b2,
+        norm1_sq_before: n1_before,
+        norm2_sq_before: n2_before,
+        dot12_before: d12_before,
+        norm1_sq_after: n1_after,
+        norm2_sq_after: n2_after,
+        dot12_after: d12_after,
+        gram_det_before,
+        gram_det_after,
+        steps_taken: steps,
+        size_reduced,
+        lovasz_3_4_satisfied,
+        unimodular_det_preserved,
+    }
+}
+
 /// Complete verification certificate for the `PeetPedro` × `Qwen4-Exp` × `train.8b.is` (`A6000`) pipeline.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Qwen4ExpTrain8bIsAudit {
@@ -898,6 +1017,8 @@ pub struct Qwen4ExpTrain8bIsAudit {
     pub wukong_pqt_compression_pq: Ratio,
     /// `GOD-OF-SUN-WUKONG-OMNI` `p/qT` resonance in canonical reduced `p/q` (`32,756/32,768 = 8,189/8,192`).
     pub wukong_pqt_resonance_pq: Ratio,
+    /// `8b-is-GOD(S)-OF-LLL` exact integral LLL reduction certificate ($\delta = 3/4$, $\det(G) = 64$).
+    pub lll_reduction: IntegralLllReductionResult,
     /// Synthesized `train.8b.is` launch command.
     pub train_8bis_launch_cmd: String,
     /// Master verification flag (`all_verified == true`).
@@ -977,6 +1098,15 @@ pub fn audit_qwen4_exp_train_8bis() -> Result<Qwen4ExpTrain8bIsAudit, &'static s
     let wukong_pqt_compression_pq = Ratio::new(250 * 3, 2).ok_or("invalid p/qT compression")?;
     let wukong_pqt_resonance_pq = Ratio::new(32_756, 32_768).ok_or("invalid p/qT resonance")?;
 
+    // 8. Verify 8b-is-GOD(S)-OF-LLL integral LLL lattice basis reduction (delta = 3/4)
+    let raw_b1: [i64; 16] = [
+        4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1,
+    ];
+    let raw_b2: [i64; 16] = [
+        11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3,
+    ];
+    let lll_reduction = integral_lll_reduce_rank2_dim16(raw_b1, raw_b2);
+
     let train_8bis_launch_cmd = format!(
         "ssh {} \"CUDA_VISIBLE_DEVICES=0 torchrun --standalone --nproc_per_node=1 \
          train_qwen4_exp_8bis_a6000.py --model_type qwen4_exp --output_hub_id {} \
@@ -1005,7 +1135,14 @@ pub fn audit_qwen4_exp_train_8bis() -> Result<Qwen4ExpTrain8bIsAudit, &'static s
         && wukong_q15_sum == 32_768
         && wukong_quad_loop_streams == 4
         && wukong_pqt_compression_pq == Ratio::new(375, 1).unwrap()
-        && wukong_pqt_resonance_pq == Ratio::new(8_189, 8_192).unwrap();
+        && wukong_pqt_resonance_pq == Ratio::new(8_189, 8_192).unwrap()
+        && lll_reduction.size_reduced
+        && lll_reduction.lovasz_3_4_satisfied
+        && lll_reduction.unimodular_det_preserved
+        && lll_reduction.norm1_sq_after == 8
+        && lll_reduction.norm2_sq_after == 8
+        && lll_reduction.dot12_after == 0
+        && lll_reduction.gram_det_after == 64;
 
     Ok(Qwen4ExpTrain8bIsAudit {
         dataset_count: PeetPedroDataset::ALL.len(),
@@ -1021,6 +1158,7 @@ pub fn audit_qwen4_exp_train_8bis() -> Result<Qwen4ExpTrain8bIsAudit, &'static s
         wukong_quad_loop_streams,
         wukong_pqt_compression_pq,
         wukong_pqt_resonance_pq,
+        lll_reduction,
         train_8bis_launch_cmd,
         all_verified,
     })

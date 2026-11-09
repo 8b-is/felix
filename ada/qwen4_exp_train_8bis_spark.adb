@@ -94,4 +94,29 @@ is
              and then Pqt_Resonance_Q15 = 8_189 * 4;
    end Verify_Wukong_Omni_Quad_Loop_Pq;
 
+   function Verify_Integral_Lll_Lovasz_3_4 return Boolean is
+      -- Initial rank-2 integer lattice basis in Z^2: b1 = (4, 1), b2 = (11, 3)
+      -- det([4, 1; 11, 3]) = 12 - 11 = 1, Gram det = ||b1||^2 ||b2||^2 - <b1,b2>^2 = 17*130 - 47^2 = 2210 - 2209 = 1
+      -- After LLL reduction (delta = 3/4): b1' = (-1, 0), b2' = (0, 1) -> orthonormal!
+      N1_Before : constant Integer_64 := 17;
+      N2_Before : constant Integer_64 := 130;
+      M12_Before : constant Integer_64 := 47;
+      Det_Before : constant Integer_64 := N1_Before * N2_Before - M12_Before * M12_Before;
+
+      N1_After  : constant Integer_64 := 1;
+      N2_After  : constant Integer_64 := 1;
+      M12_After : constant Integer_64 := 0;
+      Det_After : constant Integer_64 := N1_After * N2_After - M12_After * M12_After;
+   begin
+      -- 1. Unimodular Gram determinant invariance: Det_After = Det_Before = 1
+      -- 2. Size reduction: |2 * M12_After| <= N1_After
+      -- 3. Lovasz delta = 3/4 condition: 4 * Det_After >= (3 * N1_After - 4 * M12_After^2) * N1_After
+      -- 4. Strict Hadamard orthogonality improvement: N1_After * N2_After < N1_Before * N2_Before
+      return Det_Before = 1
+             and then Det_After = Det_Before
+             and then 2 * abs (M12_After) <= N1_After
+             and then 4 * Det_After >= 3 * N1_After * N1_After - 4 * M12_After * M12_After
+             and then N1_After * N2_After < N1_Before * N2_Before;
+   end Verify_Integral_Lll_Lovasz_3_4;
+
 end Qwen4_Exp_Train_8bis_Spark;

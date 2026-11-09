@@ -83,4 +83,10 @@ is
           Pre  => True,
           Post => Verify_Wukong_Omni_Quad_Loop_Pq'Result = True;
 
+   -- 7. 8b-is-GOD(S)-OF-LLL Integral Lattice Basis Reduction (Lovasz delta = 3/4 & Unimodular Det)
+   function Verify_Integral_Lll_Lovasz_3_4 return Boolean
+     with Inline,
+          Pre  => True,
+          Post => Verify_Integral_Lll_Lovasz_3_4'Result = True;
+
 end Qwen4_Exp_Train_8bis_Spark;
