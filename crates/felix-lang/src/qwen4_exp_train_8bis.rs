@@ -1099,12 +1099,8 @@ pub fn audit_qwen4_exp_train_8bis() -> Result<Qwen4ExpTrain8bIsAudit, &'static s
     let wukong_pqt_resonance_pq = Ratio::new(32_756, 32_768).ok_or("invalid p/qT resonance")?;
 
     // 8. Verify 8b-is-GOD(S)-OF-LLL integral LLL lattice basis reduction (delta = 3/4)
-    let raw_b1: [i64; 16] = [
-        4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1,
-    ];
-    let raw_b2: [i64; 16] = [
-        11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3,
-    ];
+    let raw_b1: [i64; 16] = [4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1];
+    let raw_b2: [i64; 16] = [11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3, 11, 3];
     let lll_reduction = integral_lll_reduce_rank2_dim16(raw_b1, raw_b2);
 
     let train_8bis_launch_cmd = format!(
@@ -1181,10 +1177,7 @@ mod tests {
         assert_eq!(audit.a6000_peak_vram_mib, 34_816);
         assert_eq!(audit.a6000_utilization_pq, Ratio::new(17, 24).unwrap());
         assert_eq!(audit.wukong_quad_loop_streams, 4);
-        assert_eq!(
-            audit.wukong_pqt_compression_pq,
-            Ratio::new(375, 1).unwrap()
-        );
+        assert_eq!(audit.wukong_pqt_compression_pq, Ratio::new(375, 1).unwrap());
         assert_eq!(
             audit.wukong_pqt_resonance_pq,
             Ratio::new(8_189, 8_192).unwrap()

@@ -392,8 +392,7 @@ pub fn audit_peloton_row_ayeos() -> Result<PelotonRowAyeOsAudit, String> {
         return Err("USB-C 16-byte sensor frame roundtrip mismatch".into());
     }
 
-    let phase =
-        RowingStrokePhase::classify(frame.handle_mm, frame.seat_mm, frame.handle_vel_mm_s);
+    let phase = RowingStrokePhase::classify(frame.handle_mm, frame.seat_mm, frame.handle_vel_mm_s);
     if phase != RowingStrokePhase::Finish {
         return Err("Expected Finish phase at handle=1200mm, seat=900mm".into());
     }

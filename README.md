@@ -219,9 +219,27 @@ scripts/            oneshot.sh (verify everything), mirror.sh (push to all forge
 
 | Forge | URL | State |
 |---|---|---|
-| GitHub | https://github.com/8b-is/felix | live (`v1.4.0`) |
-| Codeberg | https://codeberg.org/8b-is/felix | live (`v1.4.0`, dual-forge mirrored) |
+| GitHub | https://github.com/8b-is/felix | live (`v1.5.2`) |
+| Codeberg | https://codeberg.org/8b-is/felix | live (`v1.5.2`, dual-forge mirrored) |
 | g8t (Forgejo) | `git@g8t.8b.is:8b-is/felix.git` | mirror target |
+
+## 📦 v1.5.2 – root‑weight & capability‑ABI polish (2026‑11‑08)
+
+**Added**
+- `Rational` / `Root_Weight` type and `Pack`/`Unpack` functions (Ada wire‑frame package).
+- `Ingest` now optionally scales dyadic deltas by the root weight; default `Weight => (others => 0)` keeps full backward compatibility.
+- Front‑end tokens `T_MulRoot‑T_SubRoot` → opcodes `Op_MulRoot/Op_AddRoot/Op_DivRoot/Op_SubRoot`.
+- `Authorized_Root_Weight` guard in the PHOENIX interpreter – only authorised code may set the root weight.
+- §11‑§14 in `SPEC.md` (Hungarian‑root operator table, incremental linker, capability‑ABI finalisation).
+
+**Tests**
+- `cargo test --package felix-lang --test root_driver` … passes (weight evolution 7/1 → 21/2 → 73/6 → 73/12 → 61/12).
+- `cargo test --package felix-lang --test linker_smoke` … passes.
+- `make prove` (Ada) still proves 93/93 SPARK contracts.
+
+**Maintainers**
+- This contribution was prepared by the Felix maintainer / community working group.
+- Questions / discussion: open an issue or discuss on the Felix‑Lang mailing list.
 
 `scripts/mirror.sh` checks all three forges for reachability *before* pushing,
 because a mirror that half-runs leaves the forges disagreeing. When a forge is missing,

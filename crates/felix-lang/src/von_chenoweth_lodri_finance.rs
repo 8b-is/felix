@@ -52,9 +52,8 @@ pub const fn compute_tier3_hybrid_kompress_bill_cents(
     verified_saved_spend_cents: u64,
 ) -> u64 {
     let base_cents = kompress_seats.saturating_mul(TIER3_KOMPRESS_ARPU_CENTS);
-    let save_share_cents = verified_saved_spend_cents
-        .saturating_mul(BONOBO_SAVE_SHARE_PQ.0)
-        / BONOBO_SAVE_SHARE_PQ.1;
+    let save_share_cents =
+        verified_saved_spend_cents.saturating_mul(BONOBO_SAVE_SHARE_PQ.0) / BONOBO_SAVE_SHARE_PQ.1;
     base_cents.saturating_add(save_share_cents)
 }
 
@@ -282,10 +281,10 @@ pub const fn build_von_chenoweth_lodri_5yr_model() -> [AnnualFinancialProjection
             mesh_nodes: 240,
             engine_buyers: 800,
         },
-        3, // Eng
-        2, // S&M / DevRel
-        1, // G&A
-        0, // CS (Founders + AyeOS automated)
+        3,           // Eng
+        2,           // S&M / DevRel
+        1,           // G&A
+        0,           // CS (Founders + AyeOS automated)
         135_000_000, // $1.35M Year 1 OpEx
         25_000_000,  // $250K initial bootstrap cash
         500_000_000, // $5.00M Seed / Sovereign Expansion round
@@ -414,7 +413,10 @@ mod tests {
         assert_eq!(ue.seed_dilution_pq, (1, 5));
         assert_eq!(cohort_retention_pq(12), (3, 4));
         // 10 seats ($290 = 29_000c) + 1/5 of $1,000 saved (20_000c) = $490 (49_000c)
-        assert_eq!(compute_tier3_hybrid_kompress_bill_cents(10, 100_000), 49_000);
+        assert_eq!(
+            compute_tier3_hybrid_kompress_bill_cents(10, 100_000),
+            49_000
+        );
     }
 
     #[test]
@@ -430,8 +432,14 @@ mod tests {
                 yr.annual_cogs_cents + yr.annual_gross_profit_cents,
                 yr.arr_cents
             );
-            assert!(yr.ending_cash_cents > 0, "Positive cash position in all 5 years");
-            assert_eq!(yr.runway_months, 1_200, "Default-alive / cash-flow positive");
+            assert!(
+                yr.ending_cash_cents > 0,
+                "Positive cash position in all 5 years"
+            );
+            assert_eq!(
+                yr.runway_months, 1_200,
+                "Default-alive / cash-flow positive"
+            );
         }
         // Year 1 ARR > $1.5M, Year 5 ARR > $75M
         assert!(model[0].arr_cents >= 150_000_000);
