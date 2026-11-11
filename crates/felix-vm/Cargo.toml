@@ -2,4 +2,4 @@
 name = "felix-vm"
 version = "0.1.0"
 edition = "2021"
-#![no_std]
+license = "AGPL-3.0-only"
