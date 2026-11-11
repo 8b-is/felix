@@ -37,6 +37,8 @@
 //! claim that a language runtime is a mind. Those are separate slices with their
 //! own acceptance tests.
 
+mod opcode;
+
 pub mod agp_cap_iommu_tlb;
 pub mod agp_dma_ring_sim;
 pub mod agp_isa_packetizer;
@@ -84,6 +86,8 @@ pub mod von_chenoweth_lodri_finance;
 pub mod well_signal_resolution;
 pub mod well_signal_spqt_espnow;
 pub mod wire_c1_frame;
+
+pub use crate::opcode::Opcode;
 
 pub use omni_subsystems::{
     ada_bridge, dag_scheduler, ernie55_backbone, futhark_cipher_simd, latent_moe_simd, model_cache,
